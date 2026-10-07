@@ -34,12 +34,12 @@ function nextLine() {
 }
 
 function claimAchievement(id, amount) {
-    const ach = document.getElementById(ach-${id});
+    const ach = document.getElementById(`ach-${id}`);
     if (ach.classList.contains('claimed')) return;
 
     ach.classList.remove('completed');
     ach.classList.add('claimed');
-    document.getElementById(btn-claim-${id}).remove();
+    document.getElementById(`btn-claim-${id}`).remove();
 
     glitters += amount;
     document.getElementById('glitters-display').innerText = glitters;
