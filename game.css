@@ -1,66 +1,117 @@
-:root {
-	color-scheme: dark;
-	font-family: "Trebuchet MS", "Segoe UI", sans-serif;
-	color: #f3f5ef;
-	background: #111a17;
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #0b0b0b;
+    color: #e0e0e0;
+    font-family: 'Courier New', Courier, monospace;
+    overflow: hidden;
+    user-select: none;
 }
 
-* {
-	box-sizing: border-box;
+.screen-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
 }
 
-body {
-	display: grid;
-	min-height: 100vh;
-	margin: 0;
-	place-items: center;
-	background: radial-gradient(ellipse at 50% 45%, #263c31 0, #111a17 64%);
+.main-menu-box {
+    text-align: center;
+    border: 2px solid #333;
+    padding: 40px;
+    background: rgba(15, 15, 15, 0.9);
+    box-shadow: 0 0 30px rgba(0,0,0,0.9);
+}
+.game-title {
+    font-size: 32px;
+    color: #c0392b;
+    margin-bottom: 30px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+}
+.menu-btn-main {
+    display: block;
+    width: 200px;
+    margin: 10px auto;
+    background: #1a1a1a;
+    border: 1px solid #555;
+    color: #fff;
+    padding: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 16px;
+    transition: 0.2s;
+}
+.menu-btn-main:hover {
+    border-color: #c0392b;
+    background: rgba(192, 57, 43, 0.2);
 }
 
-.game-shell {
-	width: min(100% - 32px, 480px);
-	padding: 48px 24px;
-	text-align: center;
+.modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.8);
+    justify-content: center;
+    align-items: center;
+    z-index: 50;
+}
+.modal-content {
+    background: #141414;
+    border: 2px solid #555;
+    padding: 30px;
+    width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+.modal-content input {
+    background: #0a0a0a;
+    border: 1px solid #444;
+    color: #fff;
+    padding: 8px;
+    font-family: inherit;
 }
 
-.eyebrow {
-	color: #b9d982;
-	font-size: 0.8rem;
-	font-weight: 700;
-	letter-spacing: 0.12em;
-	text-transform: uppercase;
+.game-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    box-sizing: border-box;
+    padding-bottom: 40px;
 }
 
-h1 {
-	margin: 12px 0 28px;
-	font-family: Georgia, serif;
-	font-size: clamp(2.5rem, 12vw, 4rem);
-	font-weight: 400;
+.menu-btn {
+    position: absolute;
+    top: 20px; left: 30px;
+    background: transparent; border: 1px solid #555; color: #e0e0e0;
+    padding: 8px 10px; cursor: pointer; z-index: 20;
+    display: flex; flex-direction: column; justify-content: space-between;
+    width: 30px; height: 24px;
 }
+.menu-btn span { display: block; height: 2px; width: 100%; background-color: #e0e0e0; }
 
-button {
-	min-height: 48px;
-	padding: 0 22px;
-	border: 0;
-	border-radius: 4px;
-	color: #142018;
-	background: #c6e18f;
-	font: inherit;
-	font-weight: 700;
-	cursor: pointer;
+.sidebar {
+    position: fixed; top: 0; left: -360px; width: 340px; height: 100%;
+    background: rgba(12, 12, 12, 0.98); border-right: 2px solid #333;
+    z-index: 30; transition: left 0.3s ease; display: flex; flex-direction: column; padding: 20px; box-sizing: border-box;
 }
+.sidebar.open { left: 0; }
 
-button:hover:not(:disabled) {
-	background: #d7eeaa;
+.dialogue-box {
+    position: relative; width: 80%; max-width: 900px;
+    background: rgba(12, 12, 12, 0.92); border: 2px solid #555;
+    border-radius: 8px; padding: 25px 35px; cursor: pointer;
 }
-
-button:disabled {
-	cursor: wait;
-	opacity: 0.7;
-}
-
-#game-status {
-	min-height: 1.5em;
-	margin-top: 20px;
-	color: #cad4ca;
-}
+.speaker-name { font-size: 16px; font-weight: bold; color: #c0392b; margin-bottom: 8px; text-transform: uppercase; }
+.dialogue-text { font-size: 16px; line-height: 1.6; min-height: 50px; }
+	

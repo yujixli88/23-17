@@ -2,18 +2,49 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>23:17</title>
-    <link rel="stylesheet" href="/game.css">
-    <script src="/game.js" defer></script>
+    <title>Игра - Сюжет</title>
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
-
 <body>
-    <main class="game-shell">
-        <p class="eyebrow">23:17</p>
-        <h1>Игра</h1>
-        <button id="start-game" type="button">Начать игру</button>
-        <p id="game-status" role="status" aria-live="polite">Игра еще не запущена</p>
-    </main>
+
+    <div class="game-container">
+        <!-- Кнопка меню (3 полоски) -->
+        <button class="menu-btn" onclick="toggleSidebar()">
+            <span></span><span></span><span></span>
+        </button>
+
+        <!-- Боковая панель -->
+        <div class="sidebar" id="sidebar">
+            <button class="close-sidebar" onclick="toggleSidebar()" style="align-self:flex-end; background:none; border:none; color:#777; font-size:22px; cursor:pointer;">×</button>
+            
+            <div class="profile-section" style="border:1px solid #333; padding:10px; text-align:center; margin-bottom:15px;">
+                <div style="color:#c0392b; font-size:20px;">👤</div>
+                <div id="profile-status" style="font-size:12px; color:#aaa; margin-top:5px;">Гость</div>
+            </div>
+
+            <div class="rank-box" style="background:#141414; border:1px solid #444; padding:8px; margin-bottom:15px; font-size:12px; display:flex; justify-content:space-between;">
+                <div>Ранг: <span id="rank-display" style="color:#f1c40f;">Базовый</span></div>
+                <div>✨ <span id="glitters-display" style="color:#3498db;">0</span></div>
+            </div>
+
+            <div style="background:#111; border:1px solid #333; padding:8px; margin-bottom:15px; font-size:12px;">
+                <div style="color:#888; margin-bottom:5px;">Достижения</div>
+                <div id="ach-1" class="achievement-item completed" onclick="claimAchievement(1, 10)" style="padding:5px; border:1px solid #f39c12; color:#f39c12; display:flex; justify-content:space-between; cursor:pointer;">
+                    <span>Ачивка 1 (+10)</span>
+                    <button id="btn-claim-1" style="background:none; border:1px solid currentColor; color:inherit; font-size:10px;">Собрать</button>
+                </div>
+            </div>
+
+            <button class="menu-btn-main" onclick="goToMenu()" style="margin-top:auto; width:100%; font-size:12px; padding:8px;">В главное меню</button>
+        </div>
+
+        <!-- Окно диалога -->
+        <div class="dialogue-box" onclick="nextLine()">
+            <div class="speaker-name" id="speaker">ДИРЕКТОР</div>
+            <div class="dialogue-text" id="text">Занавес поднимается. Вы готовы увидеть то, что скрывает этот цирк?</div>
+        </div>
+    </div>
+
+    <script src="/static/js/game.js"></script>
 </body>
 </html>

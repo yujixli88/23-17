@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>The Freak Circus - Меню</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+    <div class="screen-container">
+        <div class="main-menu-box">
+            <div class="game-title">The Freak Circus</div>
+            <button class="menu-btn-main" onclick="openRegisterModal()">Регистрация</button>
+            <button class="menu-btn-main" onclick="startGame()">Начать игру</button>
+        </div>
+    </div>
+
+    <div class="modal" id="regModal">
+        <div class="modal-content">
+            <h3>Регистрация</h3>
+            <form onsubmit="submitRegistration(event)">
+                <input type="email" id="regEmail" placeholder="Почта" required style="width:100%; margin-bottom:10px;">
+                <input type="password" id="regPassword" placeholder="Пароль" required style="width:100%; margin-bottom:15px;">
+                <button type="submit" class="menu-btn-main" style="width:100%;">Сохранить</button>
+                <button type="button" class="menu-btn-main" style="width:100%; background: #333;" onclick="closeRegisterModal()">Закрыть</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="/static/js/auth.js"></script>
+</body>
+</html>
