@@ -3,29 +3,32 @@ from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from pathlib import Path
 import models
 import schemas
 from sqlalchemy.orm import Session
+
+BASE_DIR = Path(__file__).resolve().parent
 
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 
 @app.get("/", response_class=HTMLResponse)
 def read_menu(request: Request):
   """Главное меню (стартовая страница)"""
-  return templates.TemplateResponse("menu.html", {"request": request})
+  return templates.TemplateResponse(request=request, name="menu.html")
 
 
 @app.get("/play", response_class=HTMLResponse)
 def read_game(request: Request):
   """Страница самой игры (сюжет)"""
-  return templates.TemplateResponse("game.html", {"request": request})
+  return templates.TemplateResponse(request=request, name="game.html")
 
 
 @app.post("/api/register", response_model=schemas.UserResponse)
