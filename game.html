@@ -8,7 +8,6 @@
       content="Интерактивный детективный квест «Последний звонок в 23:17»."
     />
     <title>Последний звонок в 23:17</title>
-    <link rel="stylesheet" href="/game.css" />
     <style>
       :root {
         color-scheme: dark;
@@ -249,9 +248,312 @@
           grid-template-columns: 1fr;
         }
       }
+
+      .case-file {
+        display: none;
+      }
+
+      body {
+        display: grid;
+        place-items: center;
+        padding: 24px 14px;
+        font-family: Arial, sans-serif;
+      }
+
+      .game-window {
+        width: min(1050px, 100%);
+        overflow: hidden;
+        border: 1px solid rgba(224, 205, 171, 0.24);
+        border-radius: 16px;
+        background: #171a1e;
+        box-shadow: 0 30px 100px rgba(0, 0, 0, 0.62);
+      }
+
+      .window-bar {
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 0 18px;
+        border-bottom: 1px solid var(--line);
+        background: #22262b;
+        color: #c8c2b9;
+        font-size: 0.82rem;
+      }
+
+      .window-dots {
+        display: flex;
+        gap: 7px;
+      }
+
+      .window-dots span {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: #bd6559;
+      }
+
+      .window-dots span:nth-child(2) {
+        background: #d6ad70;
+      }
+
+      .window-dots span:nth-child(3) {
+        background: #789b78;
+      }
+
+      .game-topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 16px 22px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .game-logo {
+        color: var(--gold);
+        font-weight: 700;
+        letter-spacing: 0.04em;
+      }
+
+      .game-status {
+        color: var(--muted);
+        font-size: 0.84rem;
+      }
+
+      .game-body {
+        min-height: 520px;
+        display: grid;
+        grid-template-columns: 210px minmax(0, 1fr);
+      }
+
+      .game-menu {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 18px 12px;
+        border-right: 1px solid var(--line);
+        background: rgba(0, 0, 0, 0.14);
+      }
+
+      .menu-button,
+      .action-button,
+      .start-button,
+      .back-button {
+        min-height: 42px;
+        padding: 10px 13px;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        background: transparent;
+        color: #ddd6ca;
+        text-align: left;
+        cursor: pointer;
+      }
+
+      .menu-button:hover,
+      .menu-button.active {
+        border-color: var(--line);
+        background: rgba(214, 173, 112, 0.1);
+        color: #f2d5a5;
+      }
+
+      .menu-caption {
+        margin: 16px 8px 4px;
+        color: #89847d;
+        font-size: 0.68rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .game-screen {
+        min-width: 0;
+        padding: clamp(20px, 4vw, 38px);
+      }
+
+      .scene-kicker {
+        color: var(--gold);
+        font-size: 0.73rem;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      .scene-title {
+        margin: 9px 0 12px;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: clamp(1.7rem, 4vw, 2.5rem);
+      }
+
+      .scene-copy {
+        max-width: 680px;
+        color: #c9c4bb;
+        line-height: 1.75;
+      }
+
+      .scene-visual {
+        min-height: 170px;
+        display: grid;
+        place-items: center;
+        margin: 20px 0;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background:
+          radial-gradient(ellipse at 50% 100%, rgba(173, 112, 68, 0.24), transparent 48%),
+          linear-gradient(145deg, #25272a, #111418 70%);
+        color: rgba(214, 173, 112, 0.74);
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: clamp(1.1rem, 3vw, 1.6rem);
+        text-align: center;
+      }
+
+      .action-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 10px;
+        margin-top: 18px;
+      }
+
+      .action-button {
+        border-color: var(--line);
+        background: rgba(255, 255, 255, 0.045);
+      }
+
+      .action-button:hover,
+      .start-button:hover {
+        border-color: rgba(214, 173, 112, 0.55);
+        background: rgba(214, 173, 112, 0.15);
+      }
+
+      .start-button {
+        margin-top: 16px;
+        border-color: rgba(214, 173, 112, 0.5);
+        background: var(--gold);
+        color: #171513;
+        font-weight: 700;
+        text-align: center;
+      }
+
+      .start-button:hover {
+        color: var(--ink);
+      }
+
+      .start-button:disabled {
+        cursor: wait;
+        opacity: 0.55;
+      }
+
+      .game-list {
+        display: grid;
+        gap: 10px;
+        margin-top: 18px;
+      }
+
+      .game-list-item {
+        padding: 14px 16px;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        background: rgba(255, 255, 255, 0.035);
+        color: #d9d3ca;
+        line-height: 1.6;
+      }
+
+      .game-list-item strong {
+        color: var(--gold);
+      }
+
+      .game-result {
+        margin-top: 18px;
+        padding: 17px;
+        border: 1px solid rgba(214, 173, 112, 0.45);
+        border-radius: 9px;
+        background: rgba(214, 173, 112, 0.08);
+        color: #eee6da;
+        line-height: 1.7;
+      }
+
+      .game-result.wrong {
+        border-color: rgba(189, 101, 89, 0.55);
+        background: rgba(189, 101, 89, 0.09);
+      }
+
+      .game-window button:focus-visible {
+        outline: 2px solid #f0d49f;
+        outline-offset: 2px;
+      }
+
+      @media (max-width: 640px) {
+        body {
+          padding: 8px;
+          display: block;
+        }
+
+        .game-body {
+          min-height: 0;
+          grid-template-columns: 1fr;
+        }
+
+        .game-menu {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          padding: 10px;
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+        }
+
+        .menu-caption {
+          display: none;
+        }
+
+        .menu-button {
+          padding: 9px 5px;
+          font-size: 0.78rem;
+          text-align: center;
+        }
+
+        .game-topbar {
+          padding: 13px;
+        }
+
+        .game-status {
+          font-size: 0.72rem;
+          text-align: right;
+        }
+      }
     </style>
   </head>
   <body>
+    <article class="game-window" aria-label="Игровое окно детективного квеста">
+      <header class="window-bar">
+        <div class="window-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+        <span>Детективное агентство · новое дело</span>
+        <span aria-hidden="true">•••</span>
+      </header>
+      <div class="game-topbar">
+        <div class="game-logo">🕰 Последний звонок</div>
+        <div class="game-status" id="game-status">Дело не начато</div>
+      </div>
+      <div class="game-body">
+        <nav class="game-menu" aria-label="Меню игры">
+          <div class="menu-caption">Расследование</div>
+          <button class="menu-button active" type="button" data-view="scene">Осмотреться</button>
+          <button class="menu-button" type="button" data-view="suspects">Гости отеля</button>
+          <button class="menu-button" type="button" data-view="journal">Блокнот улик</button>
+        </nav>
+        <main class="game-screen" id="game-screen" aria-live="polite">
+          <div class="scene-kicker">Дело № 2317</div>
+          <h1 class="scene-title">Последний звонок в 23:17</h1>
+          <p class="scene-copy">
+            Снежная буря заперла вас в старом загородном отеле. Хозяин найден мёртвым
+            в кабинете, а часы пробили время, которого не должно было быть.
+          </p>
+          <div class="scene-visual" aria-hidden="true">СНЕЖНАЯ БУРЯ · 23:17</div>
+          <p class="scene-copy">Начните расследование. Осматривайте кабинет, собирайте улики и поговорите с гостями.</p>
+          <button class="start-button" type="button" data-action="start" disabled>Начать расследование</button>
+        </main>
+      </div>
+    </article>
+
     <article class="case-file">
       <header class="hero">
         <div class="eyebrow">Детективный квест · наши дни</div>
@@ -424,7 +726,236 @@
         if (button) accuse(button.dataset.suspectId, button);
       });
 
-      loadGame();
+    </script>
+    <script>
+      (() => {
+        const screen = document.getElementById("game-screen");
+        const status = document.getElementById("game-status");
+        const menu = document.querySelector(".game-menu");
+        const state = { game: null, started: false, clues: new Set(), view: "scene" };
+
+        const areas = [
+          {
+            title: "Напольные часы",
+            description: "Старые часы не работали десять лет. Кто-то заставил их пробить лишний удар вручную.",
+            clue: 0,
+          },
+          {
+            title: "Открытое окно",
+            description: "Следы на снегу ведут только от окна к лесу. Никто не подходил к окну снаружи.",
+            clue: 1,
+          },
+          {
+            title: "Камин",
+            description: "На камне осталось крошечное пятно крови. Оружия поблизости нет.",
+            clue: 2,
+          },
+          {
+            title: "Семейная фотография",
+            description: "На обороте снимка Виктор оставил короткую подпись о настоящем имени Элизы.",
+            clue: 3,
+          },
+          {
+            title: "Карманные часы",
+            description: "Стрелки остановили позже смерти Ардена. 23:17 — поддельное время убийства.",
+            clue: 4,
+          },
+        ];
+
+        function text(parent, tag, value, className) {
+          const node = document.createElement(tag);
+          node.textContent = value;
+          if (className) node.className = className;
+          parent.append(node);
+          return node;
+        }
+
+        function button(parent, label, action, value) {
+          const node = text(parent, "button", label, "action-button");
+          node.type = "button";
+          node.dataset.action = action;
+          if (value !== undefined) node.dataset.value = value;
+          return node;
+        }
+
+        function setScreen(kicker, heading, description) {
+          screen.replaceChildren();
+          text(screen, "div", kicker, "scene-kicker");
+          text(screen, "h2", heading, "scene-title");
+          if (description) text(screen, "p", description, "scene-copy");
+        }
+
+        function updateStatus() {
+          status.textContent = state.started
+            ? `23:17 · Найдено улик: ${state.clues.size}/${areas.length}`
+            : "Дело не начато";
+        }
+
+        function showScene() {
+          setScreen("Кабинет Виктора Ардена", "Осмотрите комнату", "Выберите предметы, которые хотите изучить. Каждая находка попадёт в блокнот.");
+          const visual = text(screen, "div", "ЗАПЕРТЫЙ КАБИНЕТ · СНЕГ ЗА ОКНОМ", "scene-visual");
+          visual.setAttribute("aria-hidden", "true");
+          const actions = document.createElement("div");
+          actions.className = "action-grid";
+          areas.forEach((area, index) => {
+            button(actions, `${state.clues.has(index) ? "✓ " : ""}${area.title}`, "inspect", index);
+          });
+          screen.append(actions);
+          button(screen, "Поговорить с гостями", "view", "suspects");
+        }
+
+        function showSuspects() {
+          if (!state.started) return showLanding();
+          setScreen("Гости отеля", "Кого расспросить?", "Пятеро гостей остались в отеле. Выберите человека, чтобы узнать его версию событий.");
+          const list = document.createElement("div");
+          list.className = "game-list";
+          state.game.suspects.forEach((suspect, index) => {
+            const row = document.createElement("div");
+            row.className = "game-list-item";
+            text(row, "strong", `${suspect.name} · ${suspect.role}`);
+            text(row, "p", suspect.alibi);
+            button(row, "Поговорить", "interview", index);
+            list.append(row);
+          });
+          screen.append(list);
+        }
+
+        function showJournal() {
+          if (!state.started) return showLanding();
+          setScreen("Блокнот детектива", "Собранные улики", state.clues.size ? "Записи, которые вы сделали во время осмотра." : "Пока здесь пусто. Вернитесь в кабинет и осмотрите предметы.");
+          if (state.clues.size) {
+            const list = document.createElement("div");
+            list.className = "game-list";
+            state.clues.forEach((index) => {
+              const entry = document.createElement("div");
+              entry.className = "game-list-item";
+              text(entry, "strong", areas[index].title);
+              text(entry, "p", state.game.clues[index]);
+              list.append(entry);
+            });
+            screen.append(list);
+          }
+          if (state.clues.size >= 3) button(screen, "Перейти к обвинению", "view", "suspects");
+        }
+
+        function showLanding() {
+          setScreen("Дело № 2317", "Последний звонок в 23:17", "Снежная буря заперла вас в старом загородном отеле. Хозяин найден мёртвым в кабинете, а часы пробили время, которого не должно было быть.");
+          const visual = text(screen, "div", "СНЕЖНАЯ БУРЯ · 23:17", "scene-visual");
+          visual.setAttribute("aria-hidden", "true");
+          text(screen, "p", "Начните расследование. Осматривайте кабинет, собирайте улики и поговорите с гостями.", "scene-copy");
+          const start = button(screen, "Начать расследование", "start");
+          start.className = "start-button";
+          start.disabled = !state.game;
+        }
+
+        function renderView() {
+          menu.querySelectorAll("[data-view]").forEach((item) => {
+            item.classList.toggle("active", item.dataset.view === state.view);
+          });
+          if (!state.started) return showLanding();
+          if (state.view === "suspects") return showSuspects();
+          if (state.view === "journal") return showJournal();
+          showScene();
+        }
+
+        function showInspection(index) {
+          const area = areas[index];
+          state.clues.add(index);
+          updateStatus();
+          setScreen("Осмотр кабинета", area.title, area.description);
+          text(screen, "div", state.game.clues[index], "game-result");
+          button(screen, "Продолжить осмотр", "view", "scene");
+        }
+
+        function showInterview(index) {
+          const suspect = state.game.suspects[index];
+          setScreen("Разговор с подозреваемым", suspect.name, suspect.alibi);
+          text(screen, "div", `Мотив: ${suspect.motive}`, "game-result");
+          const actions = document.createElement("div");
+          actions.className = "action-grid";
+          button(actions, "Обвинить этого человека", "accuse", suspect.id);
+          button(actions, "Вернуться к гостям", "view", "suspects");
+          screen.append(actions);
+        }
+
+        async function accuse(suspectId) {
+          if (state.clues.size < 3) {
+            setScreen("Недостаточно улик", "Выводы делать рано", "Осмотрите ещё хотя бы три предмета в кабинете, прежде чем обвинять кого-либо.");
+            button(screen, "Вернуться к осмотру", "view", "scene");
+            return;
+          }
+
+          setScreen("Финальное обвинение", "Проверяем вашу версию…", "");
+          try {
+            const response = await fetch(
+              `/api/accuse/${encodeURIComponent(suspectId)}`,
+              { method: "POST" }
+            );
+            if (!response.ok) throw new Error(`Ошибка сервера: ${response.status}`);
+            const verdict = await response.json();
+            setScreen("Дело раскрыто", verdict.title, verdict.message);
+            text(screen, "div", verdict.summary, `game-result${verdict.correct ? "" : " wrong"}`);
+            if (verdict.correct) {
+              state.view = "scene";
+              state.started = false;
+              updateStatus();
+              const restart = button(screen, "Начать заново", "restart");
+              restart.className = "start-button";
+              restart.disabled = !state.game;
+            } else {
+              button(screen, "Продолжить расследование", "view", "suspects");
+            }
+          } catch (error) {
+            setScreen("Ошибка связи", "Не удалось проверить обвинение", "Проверьте, запущен ли сервер, и попробуйте снова.");
+            console.error(error);
+          }
+        }
+
+        screen.addEventListener("click", (event) => {
+          const target = event.target.closest("button[data-action]");
+          if (!target) return;
+          const { action, value } = target.dataset;
+          if (action === "start" || action === "restart") {
+            state.started = true;
+            state.clues.clear();
+            state.view = "scene";
+            updateStatus();
+            renderView();
+          } else if (action === "view") {
+            state.view = value;
+            renderView();
+          } else if (action === "inspect") {
+            showInspection(Number(value));
+          } else if (action === "interview") {
+            showInterview(Number(value));
+          } else if (action === "accuse") {
+            accuse(value);
+          }
+        });
+
+        menu.addEventListener("click", (event) => {
+          const target = event.target.closest("button[data-view]");
+          if (!target) return;
+          state.view = target.dataset.view;
+          renderView();
+        });
+
+        async function initialize() {
+          try {
+            const response = await fetch("/api/game");
+            if (!response.ok) throw new Error(`Ошибка загрузки дела: ${response.status}`);
+            state.game = await response.json();
+            updateStatus();
+            const startButton = screen.querySelector('button[data-action="start"]');
+            if (startButton) startButton.disabled = false;
+          } catch (error) {
+            setScreen("Нет соединения", "Не удалось загрузить дело", "Запустите сервер игры и обновите страницу.");
+            console.error(error);
+          }
+        }
+
+        initialize();
+      })();
     </script>
   </body>
 </html>

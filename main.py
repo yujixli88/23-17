@@ -14,6 +14,11 @@ def home():
     return FileResponse(BASE_DIR / "game.html")
 
 
+@app.get("/game", include_in_schema=False)
+def game_page():
+    return FileResponse(BASE_DIR / "game.html")
+
+
 @app.get("/game.css", include_in_schema=False)
 def game_styles():
     return FileResponse(BASE_DIR / "game.css", media_type="text/css")
@@ -32,6 +37,12 @@ def get_game():
 def accuse_player(suspect_id: str):
     return accuse(suspect_id)
 
+
+@app.post("/api/accuse/{suspect_id}")
+def accuse_player_post(suspect_id: str):
+    return accuse(suspect_id)
+
+
 @app.get("/api/login")
 def login_user(username: str, password: str):
     # Короче здесь логин и пароль
@@ -39,4 +50,3 @@ def login_user(username: str, password: str):
         return {"success": True, "message": "Вы успешно вошли в систему!"}
     else:
         return {"success": False, "message": "Неверный логин или пароль. Попробуйте снова."}
-
