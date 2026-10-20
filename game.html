@@ -3,11 +3,428 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Интерактивный детективный квест «Последний звонок в 23:17»."
+    />
     <title>Последний звонок в 23:17</title>
     <link rel="stylesheet" href="/game.css" />
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #f4efe6;
+        --muted: #b9b1a7;
+        --panel: rgba(25, 29, 35, 0.92);
+        --line: rgba(226, 208, 177, 0.18);
+        --gold: #d6ad70;
+        --red: #bd6559;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        min-height: 100vh;
+        margin: 0;
+        padding: 36px 18px;
+        display: block;
+        color: var(--ink);
+        background:
+          radial-gradient(ellipse at 50% 0%, rgba(96, 111, 126, 0.35), transparent 55%),
+          linear-gradient(145deg, #11161c, #24211f 60%, #11161c);
+        font-family: Georgia, "Times New Roman", serif;
+      }
+
+      button {
+        color: #171513;
+        background: var(--gold);
+        font: inherit;
+      }
+
+      button:focus-visible,
+      summary:focus-visible {
+        outline: 3px solid #f0d49f;
+        outline-offset: 3px;
+      }
+
+      .case-file {
+        width: min(1060px, 100%);
+        margin: 0 auto;
+        overflow: hidden;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        box-shadow: 0 24px 90px rgba(0, 0, 0, 0.45);
+      }
+
+      .hero {
+        position: relative;
+        padding: clamp(28px, 7vw, 70px);
+        border-bottom: 1px solid var(--line);
+        background:
+          linear-gradient(90deg, rgba(14, 17, 21, 0.96), rgba(14, 17, 21, 0.55)),
+          radial-gradient(ellipse at 85% 40%, rgba(189, 101, 89, 0.28), transparent 40%);
+      }
+
+      .eyebrow,
+      .section-label {
+        color: var(--gold);
+        font: 700 0.76rem/1.4 Arial, sans-serif;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        max-width: 720px;
+        margin: 14px 0 12px;
+        font-size: clamp(2.5rem, 8vw, 5.5rem);
+        line-height: 0.98;
+      }
+
+      .subtitle {
+        color: var(--muted);
+        font: 1rem/1.6 Arial, sans-serif;
+      }
+
+      .clock {
+        position: absolute;
+        top: 36px;
+        right: clamp(24px, 6vw, 64px);
+        color: rgba(214, 173, 112, 0.35);
+        font-size: clamp(2rem, 6vw, 4rem);
+      }
+
+      main {
+        padding: clamp(22px, 5vw, 48px);
+      }
+
+      section + section {
+        margin-top: 34px;
+      }
+
+      h2 {
+        margin: 8px 0 16px;
+        font-size: clamp(1.5rem, 4vw, 2rem);
+      }
+
+      p {
+        color: #ded8cf;
+        line-height: 1.75;
+      }
+
+      .callout,
+      .quote,
+      .notice {
+        padding: 18px 20px;
+        border: 1px solid var(--line);
+        border-left: 3px solid var(--gold);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.035);
+      }
+
+      .quote {
+        color: var(--muted);
+        font-style: italic;
+      }
+
+      .columns {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+      }
+
+      .card {
+        padding: 20px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.035);
+      }
+
+      .card h3 {
+        margin: 0 0 10px;
+        color: var(--gold);
+      }
+
+      .card p {
+        margin: 8px 0;
+      }
+
+      .timeline,
+      .clue-list {
+        display: grid;
+        gap: 10px;
+        padding: 0;
+        list-style: none;
+      }
+
+      .timeline li,
+      .clue-list li {
+        padding: 13px 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.035);
+        color: #ded8cf;
+        line-height: 1.6;
+      }
+
+      .timeline strong {
+        display: inline-block;
+        min-width: 62px;
+        color: var(--gold);
+      }
+
+      .suspect-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        gap: 14px;
+      }
+
+      .suspect {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .suspect .role {
+        color: var(--muted);
+        font: 0.88rem/1.5 Arial, sans-serif;
+      }
+
+      .suspect button {
+        width: 100%;
+        min-height: 44px;
+        margin-top: auto;
+        padding: 11px 14px;
+        border: 0;
+        border-radius: 7px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .suspect button:hover {
+        filter: brightness(1.08);
+      }
+
+      .suspect button:disabled {
+        cursor: not-allowed;
+        opacity: 0.65;
+      }
+
+      .result {
+        padding: 20px;
+        border: 1px solid rgba(214, 173, 112, 0.45);
+        border-radius: 10px;
+        background: rgba(214, 173, 112, 0.08);
+      }
+
+      .result.error {
+        border-color: rgba(189, 101, 89, 0.55);
+        background: rgba(189, 101, 89, 0.09);
+      }
+
+      .result h2 {
+        margin-top: 0;
+      }
+
+      .notice {
+        border-left-color: var(--red);
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      @media (max-width: 640px) {
+        body {
+          padding: 12px;
+        }
+
+        .clock {
+          top: 24px;
+          right: 22px;
+        }
+
+        .columns {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
   </head>
   <body>
-    <div class="app" id="app"></div>
-    <script src="/game.js"></script>
+    <article class="case-file">
+      <header class="hero">
+        <div class="eyebrow">Детективный квест · наши дни</div>
+        <div class="clock" aria-hidden="true">23:17</div>
+        <h1>Последний звонок в 23:17</h1>
+        <div class="subtitle">Снежная буря. Запертый кабинет. Одиннадцать ударов — и ещё один.</div>
+      </header>
+
+      <main>
+        <section aria-labelledby="intro-title">
+          <div class="section-label">Дело № 2317</div>
+          <h2 id="intro-title">Отель, отрезанный от мира</h2>
+          <p>
+            Старый загородный отель оказался в ловушке снежной бури. Его владелец,
+            58-летний Виктор Арден, собрал за ужином пятерых гостей. В 22:40 он
+            предупредил, что утром собирается кое-что изменить — и кому-то это
+            очень не понравится.
+          </p>
+          <div class="quote">
+            «Завтра утром я собираюсь кое-что изменить. И кое-кому из вас это очень не понравится».
+          </div>
+          <p>
+            В 23:05 Арден ушёл в кабинет. В 23:17 по отелю прокатился бой старинных
+            напольных часов: одиннадцать ударов, пауза — и двенадцатый. Часы не
+            работали уже десять лет. Через несколько минут хозяина нашли мёртвым
+            за запертой изнутри дверью.
+          </p>
+        </section>
+
+        <section aria-labelledby="scene-title">
+          <div class="section-label">Место преступления</div>
+          <h2 id="scene-title">Кабинет Виктора Ардена</h2>
+          <div class="columns">
+            <div class="card">
+              <h3>На письменном столе</h3>
+              <p>Бокал красного вина — отравы в нём не обнаружили.</p>
+              <p>Раскрытый сейф и старое семейное фото.</p>
+              <p>Лист с одним написанным от руки именем: «Элиза».</p>
+              <p>Карманные часы Ардена, остановившиеся на 23:17.</p>
+            </div>
+            <div class="card">
+              <h3>За окном</h3>
+              <p>Окно было открыто, под ним виднелись следы, ведущие от дома к лесу.</p>
+              <p>Следов, ведущих к окну, не было. Побег через окно — инсценировка.</p>
+              <p>На камине нашли крошечное пятно крови. Оружие исчезло.</p>
+            </div>
+          </div>
+        </section>
+
+        <section aria-labelledby="timeline-title">
+          <div class="section-label">Хронология</div>
+          <h2 id="timeline-title">Что известно</h2>
+          <ol class="timeline">
+            <li><strong>22:40</strong> Арден объявляет, что утром изменит чью-то жизнь.</li>
+            <li><strong>22:55</strong> Горничная Мэй приносит ему в кабинет вино.</li>
+            <li><strong>23:05</strong> Арден уходит в кабинет.</li>
+            <li><strong>23:17</strong> Неисправные часы бьют одиннадцать раз, затем — ещё один.</li>
+            <li><strong>Позже</strong> Дверь находят запертой изнутри, Арден мёртв.</li>
+          </ol>
+          <div class="callout">
+            Вскрытие установило: Арден умер от сильного удара по голове, а не от вина.
+            Карманные часы остановили позже — 23:17 не было временем убийства.
+          </div>
+        </section>
+
+        <section aria-labelledby="suspects-title">
+          <div class="section-label">Расследование</div>
+          <h2 id="suspects-title">Подозреваемые</h2>
+          <p>Изучите мотивы и алиби. Когда будете готовы, выберите, кого обвинить.</p>
+          <div id="suspects" class="suspect-list" aria-live="polite">
+            <div class="notice" role="status">Загружаем материалы дела…</div>
+          </div>
+        </section>
+
+        <section aria-labelledby="clues-title">
+          <div class="section-label">Материалы дела</div>
+          <h2 id="clues-title">Улики</h2>
+          <ul id="clues" class="clue-list"></ul>
+        </section>
+
+        <section id="result-section" aria-live="polite" hidden>
+          <div id="result" class="result"></div>
+        </section>
+      </main>
+    </article>
+
+    <script>
+      const suspectsContainer = document.getElementById("suspects");
+      const cluesContainer = document.getElementById("clues");
+      const resultSection = document.getElementById("result-section");
+      const resultContainer = document.getElementById("result");
+
+      function addTextElement(parent, tag, text, className) {
+        const element = document.createElement(tag);
+        element.textContent = text;
+        if (className) element.className = className;
+        parent.append(element);
+        return element;
+      }
+
+      function renderGame(game) {
+        suspectsContainer.replaceChildren();
+        cluesContainer.replaceChildren();
+
+        game.suspects.forEach((suspect) => {
+          const card = document.createElement("article");
+          card.className = "card suspect";
+          addTextElement(card, "h3", suspect.name);
+          addTextElement(card, "div", suspect.role, "role");
+          addTextElement(card, "p", `Мотив: ${suspect.motive}`);
+          addTextElement(card, "p", `Алиби: ${suspect.alibi}`);
+
+          const button = document.createElement("button");
+          button.type = "button";
+          button.textContent = `Обвинить: ${suspect.name}`;
+          button.dataset.suspectId = suspect.id;
+          card.append(button);
+          suspectsContainer.append(card);
+        });
+
+        game.clues.forEach((clue) => addTextElement(cluesContainer, "li", clue));
+      }
+
+      async function loadGame() {
+        try {
+          const response = await fetch("/api/game");
+          if (!response.ok) throw new Error(`Ошибка загрузки: ${response.status}`);
+          renderGame(await response.json());
+        } catch (error) {
+          suspectsContainer.replaceChildren();
+          addTextElement(
+            suspectsContainer,
+            "div",
+            "Не удалось загрузить материалы дела. Обновите страницу или проверьте, запущен ли сервер.",
+            "notice"
+          );
+          console.error(error);
+        }
+      }
+
+      async function accuse(suspectId, button) {
+        button.disabled = true;
+        try {
+          const response = await fetch(
+            `/api/accuse/${encodeURIComponent(suspectId)}`
+          );
+          if (!response.ok) throw new Error(`Ошибка проверки ответа: ${response.status}`);
+
+          const verdict = await response.json();
+          resultContainer.className = verdict.correct ? "result" : "result error";
+          resultContainer.replaceChildren();
+          addTextElement(resultContainer, "h2", verdict.title);
+          addTextElement(resultContainer, "p", verdict.message);
+          addTextElement(resultContainer, "p", verdict.summary);
+          resultSection.hidden = false;
+          resultSection.scrollIntoView({ behavior: "smooth", block: "center" });
+        } catch (error) {
+          button.disabled = false;
+          resultContainer.className = "result error";
+          resultContainer.replaceChildren();
+          addTextElement(resultContainer, "h2", "Не удалось проверить обвинение");
+          addTextElement(resultContainer, "p", "Проверьте соединение с сервером и попробуйте снова.");
+          resultSection.hidden = false;
+          console.error(error);
+        }
+      }
+
+      suspectsContainer.addEventListener("click", (event) => {
+        const button = event.target.closest("button[data-suspect-id]");
+        if (button) accuse(button.dataset.suspectId, button);
+      });
+
+      loadGame();
+    </script>
   </body>
 </html>
