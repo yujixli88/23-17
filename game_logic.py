@@ -1,3 +1,15 @@
+CHALLENGES = (
+    {
+        "prompt": "The clock struck eleven times, then made one extra strike. How many strikes did the guests hear in total?",
+        "accepted_answers": {"12", "twelve", "двенадцать"},
+    },
+    {
+        "prompt": "The old photograph reveals Eliza's real identity. What is her real family name?",
+        "accepted_answers": {"lange", "ланге"},
+    },
+)
+
+
 def start_game():
     return {
         "title": "Последний звонок в 23:17",
@@ -55,6 +67,20 @@ def start_game():
         ],
         "ending": "Истина была не в окне и не в крови, а в семейной тайне, сокрытой под чужим именем."
     }
+
+
+def get_challenge(stage):
+    if stage < 0 or stage >= len(CHALLENGES):
+        return None
+    challenge = CHALLENGES[stage]
+    return {"stage": stage, "prompt": challenge["prompt"]}
+
+
+def check_challenge_answer(stage, answer):
+    if stage < 0 or stage >= len(CHALLENGES):
+        return False
+    normalized_answer = " ".join(answer.casefold().strip().split())
+    return normalized_answer in CHALLENGES[stage]["accepted_answers"]
 
 
 
