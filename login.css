@@ -1,0 +1,14 @@
+#loginBtn {
+  background: #89060600;
+  color: white;
+  border: none;
+  padding: 12px 28px;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+#loginBtn:hover {
+  background: #b15d5d44;
+}
