@@ -31,6 +31,12 @@ def read_game(request: Request):
   return templates.TemplateResponse(request=request, name="game.html")
 
 
+@app.get("/login", response_class=HTMLResponse)
+def read_login(request: Request):
+  """Страница входа"""
+  return templates.TemplateResponse(request=request, name="login.html")
+
+
 @app.post("/api/register", response_model=schemas.UserResponse)
 def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
   db_user = (

@@ -1,0 +1,58 @@
+.login-card {
+    box-sizing: border-box;
+    width: min(420px, calc(100vw - 32px));
+    padding: 32px;
+    border: 2px solid #333;
+    background: rgba(15, 15, 15, 0.96);
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.9);
+}
+
+.login-card .game-title {
+    margin: 0 0 16px;
+    text-align: center;
+}
+
+.login-note,
+.login-card label {
+    line-height: 1.5;
+}
+
+.login-card label {
+    display: block;
+    margin: 16px 0 6px;
+}
+
+.login-card input {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #555;
+    background: #0a0a0a;
+    color: #fff;
+    font: inherit;
+    user-select: text;
+}
+
+.login-card .menu-btn-main {
+    width: 100%;
+    margin-top: 20px;
+}
+
+.login-message {
+    min-height: 1.5em;
+    color: #e0a19b;
+    line-height: 1.5;
+}
+
+.back-link {
+    display: inline-block;
+    margin-top: 8px;
+    color: #e0e0e0;
+}
+
+.back-link:focus-visible,
+.login-card input:focus-visible,
+.login-card button:focus-visible {
+    outline: 2px solid #c0392b;
+    outline-offset: 3px;
+}
