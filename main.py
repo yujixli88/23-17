@@ -4,6 +4,7 @@ import sqlite3
 import time
 from collections import defaultdict, deque
 from pathlib import Path
+from typing import Literal
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse
@@ -25,6 +26,7 @@ class RegisterPayload(BaseModel):
     username: str = Field(min_length=3, max_length=32)
     email: str = Field(min_length=3, max_length=254)
     password: str = Field(min_length=12, max_length=128)
+    english_level: Literal["A1", "A2", "B1", "B2", "C1", "C2"] = "B2"
 
 
 class LoginPayload(BaseModel):
@@ -100,6 +102,11 @@ def game_styles():
     return FileResponse(BASE_DIR / "game.css", media_type="text/css")
 
 
+@app.get("/game.js", include_in_schema=False)
+def game_script():
+    return FileResponse(BASE_DIR / "game.js", media_type="text/javascript")
+
+
 @app.get("/api/auth/email-availability")
 def check_email_availability(email: str, request: Request):
     ip = request.client.host if request.client else "unknown"
@@ -120,8 +127,11 @@ def check_email_availability(email: str, request: Request):
 @app.post("/api/auth/register")
 def register(payload: RegisterPayload, response: Response):
     try:
-        username, email = auth.validate_registration(
-            payload.username, payload.email, payload.password
+        username, email, english_level = auth.validate_registration(
+            payload.username,
+            payload.email,
+            payload.password,
+            payload.english_level,
         )
     except ValueError as error:
         code = str(error)
@@ -129,13 +139,16 @@ def register(payload: RegisterPayload, response: Response):
             "username": "Use 3–32 English letters, numbers, dots, underscores, or dashes.",
             "email": "Enter a valid email address.",
             "password": "Password must be between 12 and 128 characters.",
+            "english_level": "Choose a valid English level.",
         }
         raise HTTPException(
             status_code=422, detail={"code": code, "message": messages[code]}
         ) from error
 
     try:
-        user = auth.create_user(username, email, payload.password)
+        user = auth.create_user(
+            username, email, payload.password, english_level
+        )
     except sqlite3.IntegrityError as error:
         if not auth.email_availability(email):
             raise HTTPException(

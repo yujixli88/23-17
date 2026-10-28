@@ -60,9 +60,11 @@ def initialize_database() -> None:
                 id INTEGER PRIMARY KEY,
                 username TEXT NOT NULL COLLATE NOCASE UNIQUE,
                 email TEXT NOT NULL COLLATE NOCASE UNIQUE,
+                english_level TEXT NOT NULL DEFAULT 'B2',
                 password_salt TEXT NOT NULL,
                 password_hash TEXT NOT NULL,
-                created_at INTEGER NOT NULL
+                created_at INTEGER NOT NULL,
+                last_active_at INTEGER NOT NULL DEFAULT 0
             );
             CREATE TABLE IF NOT EXISTS sessions (
                 session_hash TEXT PRIMARY KEY,
@@ -77,6 +79,20 @@ def initialize_database() -> None:
                 completed INTEGER NOT NULL DEFAULT 0
             );
             """
+        )
+        user_columns = {
+            row["name"] for row in connection.execute("PRAGMA table_info(users)")
+        }
+        if "english_level" not in user_columns:
+            connection.execute(
+                "ALTER TABLE users ADD COLUMN english_level TEXT NOT NULL DEFAULT 'B2'"
+            )
+        if "last_active_at" not in user_columns:
+            connection.execute(
+                "ALTER TABLE users ADD COLUMN last_active_at INTEGER NOT NULL DEFAULT 0"
+            )
+        connection.execute(
+            "UPDATE users SET last_active_at = created_at WHERE last_active_at = 0"
         )
 
 
@@ -97,7 +113,12 @@ def valid_email(email: str) -> bool:
     )
 
 
-def validate_registration(username: str, email: str, password: str) -> tuple[str, str]:
+def validate_registration(
+    username: str,
+    email: str,
+    password: str,
+    english_level: str = "B2",
+) -> tuple[str, str, str]:
     username = username.strip()
     email = normalize_email(email)
     if not re.fullmatch(r"[\w.-]{3,32}", username):
@@ -106,7 +127,9 @@ def validate_registration(username: str, email: str, password: str) -> tuple[str
         raise ValueError("email")
     if len(password) < 12 or len(password) > 128:
         raise ValueError("password")
-    return username, email
+    if english_level not in {"A1", "A2", "B1", "B2", "C1", "C2"}:
+        raise ValueError("english_level")
+    return username, email, english_level
 
 
 def email_availability(email: str) -> bool:
@@ -126,17 +149,36 @@ def _hash_password(password: str, salt: bytes) -> bytes:
     )
 
 
-def create_user(username: str, email: str, password: str) -> dict:
-    username, email = validate_registration(username, email, password)
+def create_user(
+    username: str,
+    email: str,
+    password: str,
+    english_level: str = "B2",
+) -> dict:
+    username, email, english_level = validate_registration(
+        username, email, password, english_level
+    )
+    now = int(time.time())
     salt = secrets.token_bytes(16)
     password_hash = _hash_password(password, salt).hex()
     with connect() as connection:
         cursor = connection.execute(
             """
-            INSERT INTO users (username, email, password_salt, password_hash, created_at)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO users (
+                username, email, english_level, password_salt, password_hash,
+                created_at, last_active_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
-            (username, email, salt.hex(), password_hash, int(time.time())),
+            (
+                username,
+                email,
+                english_level,
+                salt.hex(),
+                password_hash,
+                now,
+                now,
+            ),
         )
         connection.execute(
             "INSERT INTO game_progress (user_id) VALUES (?)", (cursor.lastrowid,)
@@ -145,6 +187,7 @@ def create_user(username: str, email: str, password: str) -> dict:
             "id": cursor.lastrowid,
             "username": username,
             "email": email,
+            "english_level": english_level,
         }
 
 
@@ -160,7 +203,12 @@ def authenticate_user(email: str, password: str) -> dict | None:
     actual = _hash_password(password, salt)
     if not user or not hmac.compare_digest(actual, expected):
         return None
-    return {"id": user["id"], "username": user["username"], "email": user["email"]}
+    return {
+        "id": user["id"],
+        "username": user["username"],
+        "email": user["email"],
+        "english_level": user["english_level"],
+    }
 
 
 def create_session(user_id: int) -> tuple[str, str]:
@@ -175,6 +223,10 @@ def create_session(user_id: int) -> tuple[str, str]:
             VALUES (?, ?, ?, ?)
             """,
             (session_hash, user_id, csrf_token, expires_at),
+        )
+        connection.execute(
+            "UPDATE users SET last_active_at = ? WHERE id = ?",
+            (int(time.time()), user_id),
         )
     signature = hmac.new(
         SESSION_SECRET, session_id.encode("ascii"), hashlib.sha256
@@ -196,8 +248,8 @@ def get_session(cookie_value: str | None) -> dict | None:
     with connect() as connection:
         row = connection.execute(
             """
-            SELECT users.id, users.username, users.email, sessions.csrf_token,
-                   sessions.expires_at, sessions.session_hash
+            SELECT users.id, users.username, users.email, users.english_level,
+                   sessions.csrf_token, sessions.expires_at, sessions.session_hash
             FROM sessions
             JOIN users ON users.id = sessions.user_id
             WHERE sessions.session_hash = ?
@@ -209,6 +261,11 @@ def get_session(cookie_value: str | None) -> dict | None:
                 "DELETE FROM sessions WHERE session_hash = ?", (session_hash,)
             )
             return None
+        if row:
+            connection.execute(
+                "UPDATE users SET last_active_at = ? WHERE id = ?",
+                (int(time.time()), row["id"]),
+            )
     if not row:
         return None
     return {
@@ -216,6 +273,7 @@ def get_session(cookie_value: str | None) -> dict | None:
             "id": row["id"],
             "username": row["username"],
             "email": row["email"],
+            "english_level": row["english_level"],
         },
         "csrf_token": row["csrf_token"],
         "session_hash": row["session_hash"],
