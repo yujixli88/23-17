@@ -45,4 +45,8 @@ channel = "stable-25_05"
 packages = ["psmisc"]
 
 [[ports]]
+localPort = 8000
+externalPort = 80
+
+[[ports]]
 localPort = 8001
