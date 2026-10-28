@@ -2,7 +2,6 @@ let currentIndex = 0;
 let glitters = 0;
 let currentRank = "Базовый уровень";
 
-// Проверяем при загрузке игры, залогинен ли юзер
 window.onload = function() {
     const savedUser = localStorage.getItem('user');
     if (savedUser) {

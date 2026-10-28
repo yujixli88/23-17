@@ -47,6 +47,7 @@ packages = ["psmisc"]
 [[ports]]
 localPort = 8000
 externalPort = 80
+exposeLocalhost = true
 
 [[ports]]
 localPort = 8001

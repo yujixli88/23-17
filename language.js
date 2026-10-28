@@ -14,3 +14,6 @@ function setLanguage(lang) {
 
 const savedLanguage = localStorage.getItem("language") || "ru";
 setLanguage(savedLanguage);
+const story = [
+    { speaker: "", text: ""},
+    { speaker: "", text: "" },
