@@ -9,25 +9,69 @@
 
     <div class="screen-container">
         <div class="main-menu-box">
-            <div class="game-title">Последний звонок в 23:13</div>
-            <a class="menu-btn-main" href="/login">Войти</a>
-            <button class="menu-btn-main" onclick="openRegisterModal()">Регистрация</button>
-            <button class="menu-btn-main" onclick="startGame()">Начать игру</button>
+
+            <div class="game-title"
+                 data-ru="Последний звонок в 23:17"
+                 data-en="The Last Bell at 23:17">
+                Последний звонок в 23:17
+            </div>
+
+            <a class="menu-btn-main" href="/login"
+               data-ru="Войти" data-en="Log In">Войти</a>
+
+            <button class="menu-btn-main" onclick="openRegisterModal()"
+                    data-ru="Регистрация" data-en="Register">
+                Регистрация
+            </button>
+
+            <button class="menu-btn-main" onclick="startGame()"
+                    data-ru="Начать игру" data-en="Start Game">
+                Начать игру
+            </button>
+
+            <div class="language-switch">
+                <button onclick="setLanguage('ru')">RU</button>
+                <button onclick="setLanguage('en')">EN</button>
+            </div>
         </div>
     </div>
 
     <div class="modal" id="regModal">
         <div class="modal-content">
-            <h3>Регистрация</h3>
+            <h3 data-ru="Регистрация" data-en="Registration">
+                Регистрация
+            </h3>
+
             <form onsubmit="submitRegistration(event)">
-                <input type="email" id="regEmail" placeholder="Почта" required style="width:100%; margin-bottom:10px;">
-                <input type="password" id="regPassword" placeholder="Пароль" required style="width:100%; margin-bottom:15px;">
-                <button type="submit" class="menu-btn-main" style="width:100%;">Сохранить</button>
-                <button type="button" class="menu-btn-main" style="width:100%; background: #333;" onclick="closeRegisterModal()">Закрыть</button>
+                <input type="email" id="regEmail"
+                       data-ru-placeholder="Почта"
+                       data-en-placeholder="Email"
+                       placeholder="Почта" required
+                       style="width:100%; margin-bottom:10px;">
+
+                <input type="password" id="regPassword"
+                       data-ru-placeholder="Пароль"
+                       data-en-placeholder="Password"
+                       placeholder="Пароль" required
+                       style="width:100%; margin-bottom:15px;">
+
+                <button type="submit" class="menu-btn-main"
+                        style="width:100%;"
+                        data-ru="Сохранить" data-en="Save">
+                    Сохранить
+                </button>
+
+                <button type="button" class="menu-btn-main"
+                        style="width:100%; background:#333;"
+                        onclick="closeRegisterModal()"
+                        data-ru="Закрыть" data-en="Close">
+                    Закрыть
+                </button>
             </form>
         </div>
     </div>
 
     <script src="/static/js/auth.js"></script>
+    <script src="/static/js/language.js"></script>
 </body>
 </html>
