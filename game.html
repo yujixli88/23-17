@@ -351,7 +351,8 @@
         color: var(--ink);
       }
 
-      .settings-dialog {
+      .settings-dialog,
+      .profile-dialog {
         width: min(420px, calc(100vw - 32px));
         max-width: none;
         padding: 0;
@@ -362,12 +363,74 @@
         box-shadow: 0 24px 80px rgba(0, 0, 0, 0.65);
       }
 
-      .settings-dialog::backdrop {
+      .settings-dialog::backdrop,
+      .profile-dialog::backdrop {
         background: rgba(0, 0, 0, 0.72);
       }
 
       .settings-content {
         padding: 22px;
+      }
+
+      .profile-settings {
+        display: grid;
+        gap: 12px;
+        margin: 16px 0;
+      }
+
+      .profile-settings label {
+        display: grid;
+        gap: 6px;
+        color: var(--muted);
+        font-size: 0.88rem;
+      }
+
+      .profile-settings input {
+        width: 100%;
+        min-height: 38px;
+        padding: 8px 10px;
+        border: 1px solid #512b31;
+        border-radius: 6px;
+        background: #140c0d;
+        color: var(--ink);
+        font: inherit;
+      }
+
+      .profile-save {
+        min-height: 40px;
+        padding: 9px 12px;
+        border: 1px solid #9e3f4a;
+        border-radius: 6px;
+        background: #57242d;
+        color: #ffd9dc;
+        cursor: pointer;
+      }
+
+      .profile-avatar-preview {
+        width: 72px;
+        height: 72px;
+        display: grid;
+        place-items: center;
+        overflow: hidden;
+        border: 1px solid #633039;
+        border-radius: 50%;
+        background: #32191d;
+        font-size: 2rem;
+      }
+
+      .profile-avatar-preview img,
+      .account-avatar img {
+        width: 100%;
+        height: 100%;
+        border-radius: inherit;
+        object-fit: cover;
+      }
+
+      .profile-feedback {
+        min-height: 1.2em;
+        margin: 0;
+        color: #e48a7e;
+        font-size: 0.85rem;
       }
 
       .settings-heading {
@@ -511,7 +574,20 @@
         background: rgba(255, 255, 255, 0.035);
       }
 
-      .account-profile > div:last-child {
+      .profile-trigger {
+        width: 100%;
+        color: inherit;
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+      }
+
+      .profile-trigger:hover {
+        border-color: #9c454f;
+        background: #351b1f;
+      }
+
+      .account-profile > span:last-child {
         flex: 1;
         min-width: 0;
         overflow: hidden;
@@ -530,12 +606,14 @@
       }
 
       .account-name {
+        display: block;
         margin: 0;
         color: var(--ink);
         font-weight: 700;
       }
 
       .account-role {
+        display: block;
         overflow: hidden;
         margin: 5px 0 0;
         color: var(--muted);
@@ -1142,18 +1220,15 @@
 
     <aside class="account-panel" id="account-panel" aria-label="Аккаунт пользователя">
       <h2 class="account-heading" id="account-heading">Аккаунт</h2>
-      <section class="account-profile" aria-label="Профиль пользователя">
-        <div class="account-avatar" aria-hidden="true">🕵️</div>
-        <div>
-          <p class="account-name" id="account-name">Детектив</p>
-          <p class="account-role" id="account-role">Игрок</p>
-        </div>
-      </section>
+      <button class="account-profile profile-trigger" id="profile-open" type="button" aria-label="Настроить профиль">
+        <span class="account-avatar" id="account-avatar" aria-hidden="true">🕵️</span>
+        <span>
+          <span class="account-name" id="account-name">Детектив</span>
+          <span class="account-role" id="account-role">Игрок</span>
+        </span>
+      </button>
       <button class="account-start-button" id="account-start-game" type="button" disabled>
         Начать игру
-      </button>
-      <button class="account-notebook-button" id="account-logout" type="button" hidden>
-        Выйти
       </button>
       <button class="account-guests" id="account-guests" type="button" data-view="suspects" disabled>
         Гости отеля
@@ -1177,6 +1252,9 @@
       <div class="settings-content">
         <h2 class="settings-heading" id="settings-heading">Настройки</h2>
         <p class="settings-description" id="settings-description">Параметры игры</p>
+        <button class="account-notebook-button" id="account-logout" type="button" hidden>
+          Выйти
+        </button>
         <div class="settings-row">
           <label id="language-label" for="language-select">Язык</label>
           <select id="language-select" aria-label="Выбрать язык">
@@ -1188,6 +1266,22 @@
       </div>
     </dialog>
 
-    <script src="/game.js?v=6" defer></script>
+    <dialog class="profile-dialog settings-dialog" id="profile-dialog" aria-labelledby="profile-heading">
+      <div class="settings-content">
+        <h2 class="settings-heading" id="profile-heading">Профиль</h2>
+        <form class="profile-settings" id="profile-settings">
+          <label for="profile-display-name" id="profile-name-label">Никнейм</label>
+          <input id="profile-display-name" name="displayName" type="text" maxlength="32" required />
+          <label for="profile-avatar-file" id="profile-avatar-label">Фото профиля</label>
+          <span class="profile-avatar-preview" id="profile-avatar-preview" aria-hidden="true">🕵️</span>
+          <input id="profile-avatar-file" name="avatar" type="file" accept="image/*" />
+          <p class="profile-feedback" id="profile-feedback" role="status"></p>
+          <button class="profile-save" id="profile-save" type="submit">Сохранить</button>
+          <button class="settings-close" id="close-profile" type="button">Закрыть</button>
+        </form>
+      </div>
+    </dialog>
+
+    <script src="/game.js?v=9" defer></script>
   </body>
 </html>

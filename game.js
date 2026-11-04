@@ -10,6 +10,14 @@
         const accountNotebookButton = document.getElementById("account-notebook-button");
         const accountStartGame = document.getElementById("account-start-game");
         const accountLogout = document.getElementById("account-logout");
+        const profileOpen = document.getElementById("profile-open");
+        const profileForm = document.getElementById("profile-settings");
+        const profileDialog = document.getElementById("profile-dialog");
+        const profileNameInput = document.getElementById("profile-display-name");
+        const profileFileInput = document.getElementById("profile-avatar-file");
+        const profileAvatarPreview = document.getElementById("profile-avatar-preview");
+        const profileFeedback = document.getElementById("profile-feedback");
+        const accountAvatar = document.getElementById("account-avatar");
         const accountClues = document.getElementById("account-clues");
         const restoreGame = document.getElementById("restore-game");
         const state = {
@@ -33,6 +41,12 @@
             settingsDescription: "Параметры игры",
             closeSettings: "Закрыть",
             profile: "Профиль пользователя",
+            profileName: "Никнейм",
+            profileAvatar: "Фото профиля (изображение до 2 МБ)",
+            profileSave: "Сохранить профиль",
+            closeProfile: "Закрыть",
+            profileImageError: "Выберите изображение размером не более 2 МБ.",
+            profileSaveError: "Не удалось сохранить профиль в этом браузере.",
             language: "Язык",
             logo: "🕰 Последний звонок",
             account: "Аккаунт",
@@ -42,6 +56,7 @@
             playButton: "Играть",
             detective: "Детектив",
             dialogueLabel: "Реплика персонажа",
+            dialogueContinue: "Далее",
             placeholderDialogue: "1",
             blackScene: "Сцена игры",
             notebook: "Блокнот улик",
@@ -114,6 +129,7 @@
             accuseReady: "Перейти к обвинению",
             inspectLabel: "Осмотр кабинета",
             continue: "Продолжить осмотр",
+            examine: "Осмотреть",
             interview: "Разговор с подозреваемым",
             motive: "Мотив",
             accusePerson: "Обвинить этого человека",
@@ -124,11 +140,11 @@
             checking: "Проверяем вашу версию…",
             revealed: "Дело раскрыто",
             wrongTitle: "Неверный вывод",
-            wrongMessage: "Это решение слишком поспешно. В деле важно не только то, кто знал о преступлении, но и кто знал об истинной личности Элизы и тайне Ардена.",
-            wrongSummary: "Правда скрыта в семейной подделке и в том, как Виктор Арден контролировал воспоминания о своём прошлом.",
+            wrongMessage: "Это не вся правда. Разделите первый и смертельный удары и выясните, кто вошёл в кабинет после Софии.",
+            wrongSummary: "Кровь на камине доказывает первый удар, но София ушла, пока Арден был ещё жив.",
             rightTitle: "Правильный вывод",
-            rightMessage: "София Ланге — настоящая убийца. Она знала правду о похищенной дочери и использовала ложный удар часов, чтобы замести следы и подменить время смерти.",
-            rightSummary: "Арден не был убит в 23:17. Он умер гораздо раньше, и именно София знала это, потому что она была связана с самой тайной, которую хранит отель.",
+            rightMessage: "Мэй Холл нанесла смертельный удар. София ударила Ардена первой, но он был ещё жив. Томас помог скрыть следы.",
+            rightSummary: "София призналась в первом ударе, Мэй — в смертельном, а Томас — в инсценировке побега. Элиза оказалась дочерью Софии.",
             restart: "Начать заново",
             continueInvestigation: "Продолжить расследование",
             connectionError: "Ошибка связи",
@@ -145,17 +161,56 @@
             ],
             suspects: {
               eliza: { name: "Элиза Арден", role: "Дочь жертвы", motive: "Арден лишал её наследства и держал её в тени.", alibi: "Говорит, что весь вечер была в библиотеке." },
-              mark: { name: "Марк Вейл", role: "Деловой партнёр", motive: "Арден готовился разоблачить его махинации.", alibi: "Утверждает, что был в винном погребе." },
-              sofia: { name: "София Ланге", role: "Бывшая жена", motive: "Арден двадцать лет назад похитил её дочь и подделал документы.", alibi: "Её визит в отель был не случайным." },
+              mark: { name: "Марк Вейл", role: "Деловой партнёр", motive: "Арден собирался раскрыть его финансовые махинации.", alibi: "Утверждает, что был в винном погребе, но камеры выключились на семь минут." },
+              sofia: { name: "София Ланге", role: "Бывшая жена", motive: "Арден разрушил её репутацию, а двадцать девять лет назад похитил её дочь.", alibi: "Её визит в отель был не случайным." },
               thomas: { name: "Томас Рид", role: "Управляющий отелем", motive: "Знает все тайные проходы и замки.", alibi: "Первым обнаружил тело и выглядел слишком удобно." },
-              may: { name: "Мэй Холл", role: "Горничная", motive: "Последней видела Ардена живым и принесла ему вино.", alibi: "Считает, что не может читать по-французски." },
+              may: { name: "Мэй Холл", role: "Горничная", motive: "Её брата ложно обвинили в краже; он умер в тюрьме.", alibi: "Считает, что не может читать по-французски." },
             },
             clues: [
               "Часы пробили одиннадцать ударов, а затем кто-то вручную добавил двенадцатый. Время смерти было сфабриковано.",
               "Следы на снегу ведут не к окну, а от него — значит, убийца не выходил наружу.",
-              "Пятно крови на камине размером с ноготь указывает на краткое, спешное действие.",
+              "Пятно крови на камине оставил первый удар Софии. Арден пережил его, но позже Мэй ударила его снова.",
               "На обратной стороне старой фотографии написано: «Настоящее имя — Элиза Ланге».",
               "Арден хотел оставить подсказку: подделка касалась не только документов, но и личности Элизы.",
+            ],
+            openingDialogues: [
+              { speaker: "Рассказчик", portrait: "🌨️", line: "Снежная буря отрезала старый загородный отель от города. Вечером Виктор Арден собрал пятерых гостей на ужин." },
+              { speaker: "Виктор Арден", portrait: "🧔🏻", line: "Завтра утром я собираюсь кое-что изменить. И кое-кому из вас это очень не понравится." },
+              { speaker: "Рассказчик", portrait: "🌨️", line: "В 23:17 часы пробили одиннадцать раз. После паузы раздался ещё один удар. Вскоре Ардена нашли мёртвым в запертом кабинете." },
+              { speaker: "Детектив", portrait: "🕵️", line: "Окно открыто, следы ведут к лесу, а карманные часы остановились на 23:17. Слишком много совпадений." },
+            ],
+            studyDialogues: [
+              { speaker: "Рассказчик", portrait: "🕯️", line: "На столе стоят бокал вина и раскрытый сейф. Рядом лежат семейная фотография и лист с именем «Элиза»." },
+              { speaker: "Детектив", portrait: "🕵️", line: "Вино не отравлено. Причина смерти — удар по голове, но оружия в кабинете нет." },
+              { speaker: "Детектив", portrait: "🕵️", line: "Начну с часов, окна, камина и документов. Каждая деталь может изменить ход расследования." },
+            ],
+            clueDialogues: [
+              [{ speaker: "Детектив", portrait: "🕵️", line: "Эти часы не работали десять лет. Кто-то заставил механизм сделать лишний удар вручную." }],
+              [{ speaker: "Детектив", portrait: "🕵️", line: "Следы ведут от окна к лесу, но к окну никто не подходил. Побег наружу инсценировали." }],
+              [{ speaker: "Детектив", portrait: "🕵️", line: "На камине осталось крошечное пятно крови. Кто-то ударил Ардена, но этого удара оказалось недостаточно, чтобы убить его." }],
+              [{ speaker: "Детектив", portrait: "🕵️", line: "На обороте фотографии написано: «Настоящее имя — Элиза Ланге». Элиза — дочь Софии." }],
+              [{ speaker: "Детектив", portrait: "🕵️", line: "Карманные часы остановили позже настоящей смерти. 23:17 — поддельное время." }],
+            ],
+            interviewDialogues: {
+              eliza: [{ speaker: "Элиза", portrait: "👩🏻", line: "Я ненавидела его. Но не убивала. Почти весь вечер я была в библиотеке." }],
+              mark: [{ speaker: "Марк", portrait: "🧔🏻", line: "В 23:10 я был в винном погребе. Камеры выключились? Этого я объяснить не могу." }],
+              sofia: [{ speaker: "София", portrait: "👩🏼", line: "Я приехала впервые за много лет. Хотела убедиться, что он наконец получит то, что заслужил." }],
+              thomas: [{ speaker: "Томас", portrait: "🧑🏻", line: "Я знаю старые проходы и устройство часов. Но это не значит, что я убил Ардена." }],
+              may: [{ speaker: "Мэй", portrait: "👩🏽", line: "Я принесла ему вино около 22:55. Почему он написал имя Элиза? Не знаю. Я ведь не умею читать по-французски." }, { speaker: "Детектив", portrait: "🕵️", line: "Имя написано обычными буквами. Почему вы решили, что записка была по-французски?" }],
+            },
+            revealDialogues: [
+              { speaker: "София", portrait: "👩🏼", line: "Да, я ударила Ардена. Он смеялся, когда я спросила о дочери. Я увидела документы и ударила его. Он был жив, когда я ушла." },
+              { speaker: "София", portrait: "👩🏼", line: "Я услышала шаги и спряталась. В кабинет вошла Мэй. Она увидела Ардена на полу и наклонилась к нему. Я ушла через служебный проход." },
+              { speaker: "Детектив", portrait: "🕵️", line: "Мэй, вы вошли после Софии. Вы знали, что Арден ещё жив." },
+              { speaker: "Мэй", portrait: "👩🏽", line: "Он подставил моего брата. Брат умер в тюрьме, а Арден собирался уничтожить последние доказательства. Когда он попытался встать, я взяла кочергу и ударила его второй раз." },
+              { speaker: "Мэй", portrait: "👩🏽", line: "Я остановила часы на 23:17 и открыла окно. Томас помог сделать следы. Он никого не убивал." },
+              { speaker: "Элиза", portrait: "👩🏻", line: "Я узнала, что София — моя мать, только вчера. Я не знаю, кого считать семьёй. Но знаю: Виктор Арден не был моим отцом." },
+              { speaker: "Рассказчик", portrait: "🔥", line: "Через три месяца Элиза вернулась в закрытый отель, нашла последнее письмо Ардена и сожгла его. София ждала её у крыльца с двумя стаканчиками кофе." },
+              { speaker: "Элиза", portrait: "👩🏻", line: "Мам?" },
+              { speaker: "София", portrait: "👩🏼", line: "Да?" },
+              { speaker: "Рассказчик", portrait: "🕰️", line: "В пустом кабинете часы наконец пошли. 23:17 осталось в прошлом." },
+              { speaker: "Рассказчик", portrait: "📷", line: "София призналась в первом ударе, Мэй — в смертельном, Томас — в сокрытии следов. Перед отъездом детектив заметил под фотографией ещё одну записку: «София никогда не должна узнать, что произошло той ночью»." },
+              { speaker: "Детектив", portrait: "🕵️", line: "Что произошло двадцать девять лет назад — и почему Арден боялся, что София узнает правду?" },
             ],
           },
           en: {
@@ -166,6 +221,12 @@
             settingsDescription: "Game preferences",
             closeSettings: "Close",
             profile: "User profile",
+            profileName: "Nickname",
+            profileAvatar: "Profile photo (image up to 2 MB)",
+            profileSave: "Save profile",
+            closeProfile: "Close",
+            profileImageError: "Choose an image no larger than 2 MB.",
+            profileSaveError: "This browser could not save the profile.",
             language: "Language",
             logo: "🕰 The Last Chime",
             account: "Account",
@@ -175,6 +236,7 @@
             playButton: "Play game",
             detective: "Detective",
             dialogueLabel: "Character dialogue",
+            dialogueContinue: "Continue",
             placeholderDialogue: "1",
             blackScene: "Game scene",
             notebook: "Clue notebook",
@@ -247,6 +309,7 @@
             accuseReady: "Choose a suspect",
             inspectLabel: "Searching the study",
             continue: "Continue searching",
+            examine: "Examine",
             interview: "Interview",
             motive: "Motive",
             accusePerson: "Accuse this person",
@@ -257,11 +320,11 @@
             checking: "Checking your theory…",
             revealed: "Case solved",
             wrongTitle: "Wrong conclusion",
-            wrongMessage: "That conclusion is too quick. The key is not only who knew about the crime, but also who knew Eliza's real identity and Arden's secret.",
-            wrongSummary: "The truth is hidden in a false family history and in the way Victor Arden controlled the story of his past.",
+            wrongMessage: "That is not the whole story. Separate the first blow from the fatal one and find out who entered the study after Sophia.",
+            wrongSummary: "The blood on the fireplace points to the first blow, but Sophia left while Arden was still alive.",
             rightTitle: "Correct conclusion",
-            rightMessage: "Sophia Lange is the killer. She knew the truth about her stolen daughter and used the false clock chime to hide the real time of death.",
-            rightSummary: "Arden did not die at 11:17 PM. He died much earlier. Sophia knew the truth because she was part of the family secret hidden by the hotel.",
+            rightMessage: "May Hall dealt the fatal blow. Sophia struck Arden first, but he was still alive. Thomas helped hide the evidence.",
+            rightSummary: "Sophia admitted the first blow, May the fatal one, and Thomas the staged escape. Eliza was Sophia's daughter.",
             restart: "Play again",
             continueInvestigation: "Continue investigation",
             connectionError: "Connection error",
@@ -278,17 +341,56 @@
             ],
             suspects: {
               eliza: { name: "Eliza Arden", role: "The victim's daughter", motive: "Arden planned to cut her out of his will and keep her in the dark.", alibi: "She says she spent the evening in the library." },
-              mark: { name: "Mark Vale", role: "Business partner", motive: "Arden was preparing to expose his fraud.", alibi: "He says he was in the wine cellar." },
-              sofia: { name: "Sophia Lange", role: "Former wife", motive: "Twenty years ago, Arden took her daughter and changed the records.", alibi: "Her visit to the hotel was no accident." },
+              mark: { name: "Mark Vale", role: "Business partner", motive: "Arden was preparing to expose his financial fraud.", alibi: "He says he was in the wine cellar, but its cameras went dark for seven minutes." },
+              sofia: { name: "Sophia Lange", role: "Former wife", motive: "Arden ruined her career, then stole her daughter twenty-nine years ago.", alibi: "Her visit to the hotel was no accident." },
               thomas: { name: "Thomas Reed", role: "Hotel manager", motive: "He knows every hidden passage and old lock.", alibi: "He found the body first, which looks suspiciously convenient." },
-              may: { name: "May Hall", role: "Housekeeper", motive: "She was the last person to see Arden alive and brought him wine.", alibi: "She says she cannot read French." },
+              may: { name: "May Hall", role: "Housekeeper", motive: "Her brother was falsely accused of theft and died in prison.", alibi: "She says she cannot read French." },
             },
             clues: [
               "The clock struck eleven times, then someone added a twelfth strike by hand. The time of death was staged.",
               "The footprints lead away from the window, not towards it. The killer did not escape outside.",
-              "A tiny spot of blood on the fireplace suggests a brief, rushed action.",
+              "The blood on the fireplace came from Sophia's first blow. Arden survived it, but May struck him again later.",
               "The back of the old photograph reads: “Her real name is Eliza Lange.”",
               "Arden left a clue: the lie was not only about documents, but also about Eliza's identity.",
+            ],
+            openingDialogues: [
+              { speaker: "Narrator", portrait: "🌨️", line: "A snowstorm has cut the old country hotel off from town. That evening, Victor Arden gathered five guests for dinner." },
+              { speaker: "Victor Arden", portrait: "🧔🏻", line: "Tomorrow morning I am going to change something. And some of you will not like it." },
+              { speaker: "Narrator", portrait: "🌨️", line: "At 11:17, the clock struck eleven times. After a pause, there was one more chime. Soon Arden was found dead in his locked study." },
+              { speaker: "Detective", portrait: "🕵️", line: "The window is open, footprints lead to the forest, and the pocket watch stopped at 11:17. Too many coincidences." },
+            ],
+            studyDialogues: [
+              { speaker: "Narrator", portrait: "🕯️", line: "A glass of wine and an open safe sit on the desk. Beside them are a family photograph and a note with the name “Eliza.”" },
+              { speaker: "Detective", portrait: "🕵️", line: "The wine was not poisoned. Arden died from a blow to the head, but the weapon is missing." },
+              { speaker: "Detective", portrait: "🕵️", line: "I will examine the clock, window, fireplace, and documents. Any detail could change the case." },
+            ],
+            clueDialogues: [
+              [{ speaker: "Detective", portrait: "🕵️", line: "This clock has not worked for ten years. Someone made the mechanism strike one extra time by hand." }],
+              [{ speaker: "Detective", portrait: "🕵️", line: "The footprints lead from the window to the forest, but none lead to the window. The escape was staged." }],
+              [{ speaker: "Detective", portrait: "🕵️", line: "A tiny spot of blood remains on the fireplace. Someone struck Arden, but that blow was not enough to kill him." }],
+              [{ speaker: "Detective", portrait: "🕵️", line: "The back of the photograph reads: “Her real name is Eliza Lange.” Eliza is Sophia's daughter." }],
+              [{ speaker: "Detective", portrait: "🕵️", line: "The pocket watch was stopped after the real time of death. 11:17 was staged." }],
+            ],
+            interviewDialogues: {
+              eliza: [{ speaker: "Eliza", portrait: "👩🏻", line: "I hated him. But I did not kill him. I was in the library for most of the evening." }],
+              mark: [{ speaker: "Mark", portrait: "🧔🏻", line: "At 11:10 I was in the wine cellar. The cameras went off? I cannot explain that." }],
+              sofia: [{ speaker: "Sophia", portrait: "👩🏼", line: "I came here for the first time in years. I wanted to make sure he finally got what he deserved." }],
+              thomas: [{ speaker: "Thomas", portrait: "🧑🏻", line: "I know the old passages and how the clock works. That does not mean I killed Arden." }],
+              may: [{ speaker: "May", portrait: "👩🏽", line: "I brought him wine at about 10:55. Why did he write Eliza? I do not know. I cannot read French." }, { speaker: "Detective", portrait: "🕵️", line: "The name is written in ordinary letters. Why did you think the note was in French?" }],
+            },
+            revealDialogues: [
+              { speaker: "Sophia", portrait: "👩🏼", line: "Yes, I struck Arden. He laughed when I asked about my daughter. I saw the documents and hit him. He was alive when I left." },
+              { speaker: "Sophia", portrait: "👩🏼", line: "I heard footsteps and hid. May came in, saw Arden on the floor, and leaned over him. I left through a service passage." },
+              { speaker: "Detective", portrait: "🕵️", line: "May, you came in after Sophia. You knew Arden was still alive." },
+              { speaker: "May", portrait: "👩🏽", line: "He framed my brother. My brother died in prison, and Arden planned to destroy the last evidence. When he tried to stand, I took the poker and struck him a second time." },
+              { speaker: "May", portrait: "👩🏽", line: "I stopped the clock at 11:17 and opened the window. Thomas made the footprints. He did not kill anyone." },
+              { speaker: "Eliza", portrait: "👩🏻", line: "I learned yesterday that Sophia is my mother. I do not know whom to call family. But I know Victor Arden was not my father." },
+              { speaker: "Narrator", portrait: "🔥", line: "Three months later, Eliza returned to the closed hotel, found Arden's last letter, and burned it. Sophia was waiting outside with two cups of coffee." },
+              { speaker: "Eliza", portrait: "👩🏻", line: "Mom?" },
+              { speaker: "Sophia", portrait: "👩🏼", line: "Yes?" },
+              { speaker: "Narrator", portrait: "🕰️", line: "In the empty study, the clock finally began to move. 11:17 was in the past." },
+              { speaker: "Narrator", portrait: "📷", line: "Sophia admitted the first blow, May the fatal one, and Thomas the cover-up. Before leaving, the detective found another note beneath the photograph: “Sophia must never learn what happened that night.”" },
+              { speaker: "Detective", portrait: "🕵️", line: "What happened twenty-nine years ago, and why was Arden afraid Sophia would learn the truth?" },
             ],
           },
         };
@@ -321,6 +423,12 @@
           document.getElementById("account-panel").setAttribute("aria-label", t().account);
           document.getElementById("account-heading").textContent = t().account;
           document.querySelector(".account-profile").setAttribute("aria-label", t().profile);
+          profileOpen.setAttribute("aria-label", t().profile);
+          document.getElementById("profile-name-label").textContent = t().profileName;
+          document.getElementById("profile-avatar-label").textContent = t().profileAvatar;
+          document.getElementById("profile-save").textContent = t().profileSave;
+          document.getElementById("profile-heading").textContent = t().profile;
+          document.getElementById("close-profile").textContent = t().closeProfile;
           accountLogout.textContent = t().signOut;
           accountGuests.disabled = !state.user;
           accountNotebookButton.disabled = !state.user;
@@ -505,12 +613,29 @@
 
         function updateAccount(user) {
           state.user = user;
-          document.getElementById("account-name").textContent = user.username;
+          const preferences = JSON.parse(localStorage.getItem(`game-profile-${user.id}`) || "{}");
+          document.getElementById("account-name").textContent = preferences.displayName || user.username;
+          showAvatar(accountAvatar, preferences.avatarData);
+          profileNameInput.value = preferences.displayName || user.username;
+          showAvatar(profileAvatarPreview, preferences.avatarData);
+          profileAvatarPreview.dataset.imageData = preferences.avatarData || "";
           const accountEmail = document.getElementById("account-role");
           accountEmail.textContent = user.email;
           accountEmail.title = user.email;
           accountLogout.hidden = false;
           updateStatus();
+        }
+
+        function showAvatar(container, imageData) {
+          container.replaceChildren();
+          if (!imageData) {
+            container.textContent = "🕵️";
+            return;
+          }
+          const image = document.createElement("img");
+          image.src = imageData;
+          image.alt = "";
+          container.append(image);
         }
 
         async function apiFetch(url, options = {}) {
@@ -554,7 +679,7 @@
           if (description) text(screen, "p", description, "scene-copy");
         }
 
-        function addNovelDialogue(speaker, portrait = "🕵️") {
+        function addNovelDialogue(speaker, portrait = "🕵️", entries = null) {
           let stage = screen.querySelector(".novel-stage");
           if (!stage) {
             stage = document.createElement("div");
@@ -569,8 +694,25 @@
           image.setAttribute("aria-hidden", "true");
           const copyPanel = document.createElement("div");
           copyPanel.className = "novel-dialogue-copy";
-          text(copyPanel, "h3", speaker, "novel-speaker");
-          text(copyPanel, "p", t().placeholderDialogue, "novel-line");
+          const speakerNode = text(copyPanel, "h3", speaker, "novel-speaker");
+          const lineNode = text(copyPanel, "p", t().placeholderDialogue, "novel-line");
+          lineNode.setAttribute("aria-live", "polite");
+          const sequence = entries && entries.length ? entries : [{ speaker, portrait, line: t().placeholderDialogue }];
+          const nextButton = text(copyPanel, "button", t().dialogueContinue, "action-button");
+          nextButton.type = "button";
+          nextButton.addEventListener("click", () => {
+            sequenceIndex = Math.min(sequenceIndex + 1, sequence.length - 1);
+            renderEntry();
+          });
+          let sequenceIndex = 0;
+          function renderEntry() {
+            const entry = sequence[sequenceIndex];
+            speakerNode.textContent = entry.speaker;
+            lineNode.textContent = entry.line;
+            image.textContent = entry.portrait || portrait;
+            nextButton.hidden = sequenceIndex === sequence.length - 1;
+          }
+          renderEntry();
           panel.append(copyPanel);
           stage.append(panel);
         }
@@ -603,7 +745,14 @@
 
         function showScene() {
           setScreen(t().room, t().inspectRoom, "");
-          addNovelDialogue(t().detective);
+          addNovelDialogue(t().detective, "🕵️", t().studyDialogues);
+          const evidenceActions = document.createElement("div");
+          evidenceActions.className = "action-grid";
+          t().areas.forEach((area, index) => {
+            const examine = button(evidenceActions, `${t().examine}: ${area.title}`, "inspect", index);
+            examine.disabled = state.clues.has(index);
+          });
+          screen.append(evidenceActions);
           if (state.stage < 2) {
             button(screen, state.stage === 0 ? t().solveChallenge : t().resumeChallenge, "challenge");
           } else {
@@ -649,7 +798,8 @@
 
         function showLanding() {
           setScreen(t().caseNumber, t().introTitle, "");
-          addNovelDialogue(t().detective);
+          addNovelDialogue(t().detective, "🕵️", t().openingDialogues);
+          button(screen, t().start, "start").classList.add("start-button");
         }
 
         function renderView() {
@@ -675,7 +825,7 @@
             state.stage = progress.stage;
             updateStatus();
             setScreen(t().inspectLabel, t().areas[index].title, t().areas[index].description);
-            addNovelDialogue(t().detective);
+            addNovelDialogue(t().detective, "🕵️", t().clueDialogues[index]);
             text(screen, "div", t().clues[index], "game-result");
             button(screen, t().continue, "view", "scene");
           } catch (error) {
@@ -695,7 +845,7 @@
             thomas: "🧑🏻",
             may: "👩🏽",
           };
-          addNovelDialogue(details.name, portraits[suspect.id] || "👤");
+          addNovelDialogue(details.name, portraits[suspect.id] || "👤", t().interviewDialogues[suspect.id]);
           text(screen, "div", `${t().motive}: ${details.motive}`, "game-result");
           const actions = document.createElement("div");
           actions.className = "action-grid";
@@ -813,6 +963,7 @@
             if (!response.ok) throw new Error(`Server error: ${response.status}`);
             const verdict = await response.json();
             setScreen(t().revealed, verdict.correct ? t().rightTitle : t().wrongTitle, verdict.correct ? t().rightMessage : t().wrongMessage);
+            if (verdict.correct) addNovelDialogue(t().detective, "🕵️", t().revealDialogues);
             text(screen, "div", verdict.correct ? t().rightSummary : t().wrongSummary, `game-result${verdict.correct ? "" : " wrong"}`);
             if (verdict.correct) {
               state.view = "scene";
@@ -931,6 +1082,61 @@
           }
         });
 
+        profileOpen.addEventListener("click", () => {
+          const user = state.user;
+          const preferences = user
+            ? JSON.parse(localStorage.getItem(`game-profile-${user.id}`) || "{}")
+            : {};
+          profileNameInput.value = preferences.displayName || user?.username || t().accountName;
+          profileFileInput.value = "";
+          profileFeedback.textContent = "";
+          showAvatar(profileAvatarPreview, preferences.avatarData);
+          profileAvatarPreview.dataset.imageData = preferences.avatarData || "";
+          profileDialog.showModal();
+          profileNameInput.focus();
+        });
+
+        profileFileInput.addEventListener("change", () => {
+          const file = profileFileInput.files[0];
+          if (!file) return;
+          if (!file.type.startsWith("image/") || file.size > 2 * 1024 * 1024) {
+            profileFeedback.textContent = t().profileImageError;
+            profileFileInput.value = "";
+            return;
+          }
+          const reader = new FileReader();
+          reader.addEventListener("load", () => {
+            showAvatar(profileAvatarPreview, reader.result);
+            profileAvatarPreview.dataset.imageData = reader.result;
+            profileFeedback.textContent = "";
+          });
+          reader.readAsDataURL(file);
+        });
+
+        profileForm.addEventListener("submit", (event) => {
+          event.preventDefault();
+          if (!state.user) return;
+          const displayName = profileNameInput.value.trim().slice(0, 32);
+          if (!displayName) {
+            profileNameInput.focus();
+            return;
+          }
+          const oldPreferences = JSON.parse(localStorage.getItem(`game-profile-${state.user.id}`) || "{}");
+          const preferences = {
+            displayName,
+            avatarData: profileAvatarPreview.dataset.imageData || oldPreferences.avatarData || "",
+          };
+          try {
+            localStorage.setItem(`game-profile-${state.user.id}`, JSON.stringify(preferences));
+            document.getElementById("account-name").textContent = displayName;
+            showAvatar(accountAvatar, preferences.avatarData);
+            profileDialog.close();
+          } catch (error) {
+            profileFeedback.textContent = t().profileSaveError;
+            console.error(error);
+          }
+        });
+
         document.getElementById("minimize-game").addEventListener("click", () => {
           gameWindow.classList.add("minimized");
           restoreGame.hidden = false;
@@ -943,10 +1149,16 @@
 
         languageSelect.addEventListener("change", () => setLanguage(languageSelect.value));
 
-        openSettings.addEventListener("click", () => settingsDialog.showModal());
+        openSettings.addEventListener("click", () => {
+          settingsDialog.showModal();
+        });
         closeSettings.addEventListener("click", () => settingsDialog.close());
+        document.getElementById("close-profile").addEventListener("click", () => profileDialog.close());
         settingsDialog.addEventListener("click", (event) => {
           if (event.target === settingsDialog) settingsDialog.close();
+        });
+        profileDialog.addEventListener("click", (event) => {
+          if (event.target === profileDialog) profileDialog.close();
         });
 
         async function initialize() {
