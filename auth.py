@@ -64,7 +64,9 @@ def initialize_database() -> None:
                 password_salt TEXT NOT NULL,
                 password_hash TEXT NOT NULL,
                 created_at INTEGER NOT NULL,
-                last_active_at INTEGER NOT NULL DEFAULT 0
+                last_active_at INTEGER NOT NULL DEFAULT 0,
+                banned_until INTEGER NOT NULL DEFAULT 0,
+                ban_reason TEXT NOT NULL DEFAULT ''
             );
             CREATE TABLE IF NOT EXISTS sessions (
                 session_hash TEXT PRIMARY KEY,
@@ -90,6 +92,14 @@ def initialize_database() -> None:
         if "last_active_at" not in user_columns:
             connection.execute(
                 "ALTER TABLE users ADD COLUMN last_active_at INTEGER NOT NULL DEFAULT 0"
+            )
+        if "banned_until" not in user_columns:
+            connection.execute(
+                "ALTER TABLE users ADD COLUMN banned_until INTEGER NOT NULL DEFAULT 0"
+            )
+        if "ban_reason" not in user_columns:
+            connection.execute(
+                "ALTER TABLE users ADD COLUMN ban_reason TEXT NOT NULL DEFAULT ''"
             )
         connection.execute(
             "UPDATE users SET last_active_at = created_at WHERE last_active_at = 0"
@@ -209,6 +219,14 @@ def authenticate_user(email: str, password: str) -> dict | None:
         "email": user["email"],
         "english_level": user["english_level"],
     }
+
+
+def is_user_banned(user_id: int) -> bool:
+    with connect() as connection:
+        row = connection.execute(
+            "SELECT banned_until FROM users WHERE id = ?", (user_id,)
+        ).fetchone()
+    return bool(row and row["banned_until"] > int(time.time()))
 
 
 def create_session(user_id: int) -> tuple[str, str]:

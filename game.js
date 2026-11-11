@@ -11,6 +11,10 @@
         const accountStartGame = document.getElementById("account-start-game");
         const accountLogout = document.getElementById("account-logout");
         const profileOpen = document.getElementById("profile-open");
+        const profileToggle = document.getElementById("profile-toggle");
+        const accountPanel = document.getElementById("account-panel");
+        const accountBackdrop = document.getElementById("account-backdrop");
+        const profileDrawerClose = document.getElementById("profile-drawer-close");
         const profileForm = document.getElementById("profile-settings");
         const profileDialog = document.getElementById("profile-dialog");
         const profileNameInput = document.getElementById("profile-display-name");
@@ -78,6 +82,8 @@
             emailTaken: "Этот адрес уже зарегистрирован.",
             emailAvailable: "Этот адрес свободен ✓",
             signOut: "Выйти",
+            showProfile: "Открыть профиль",
+            hideProfile: "Закрыть профиль",
             authFailed: "Не удалось выполнить запрос. Проверьте данные и повторите попытку.",
             weakPassword: "Пароль должен содержать от 12 до 128 символов.",
             usernameTaken: "Это имя пользователя уже занято.",
@@ -258,6 +264,8 @@
             emailTaken: "This email is already registered.",
             emailAvailable: "This email is available ✓",
             signOut: "Sign out",
+            showProfile: "Open profile",
+            hideProfile: "Close profile",
             authFailed: "The request failed. Check your details and try again.",
             weakPassword: "Use a password with 12 to 128 characters.",
             usernameTaken: "This username is already in use.",
@@ -424,6 +432,10 @@
           document.getElementById("account-heading").textContent = t().account;
           document.querySelector(".account-profile").setAttribute("aria-label", t().profile);
           profileOpen.setAttribute("aria-label", t().profile);
+          profileToggle.setAttribute("aria-label", accountPanel.classList.contains("is-open") ? t().hideProfile : t().showProfile);
+          profileToggle.title = t().profile;
+          profileDrawerClose.setAttribute("aria-label", t().hideProfile);
+          accountBackdrop.setAttribute("aria-label", t().hideProfile);
           document.getElementById("profile-name-label").textContent = t().profileName;
           document.getElementById("profile-avatar-label").textContent = t().profileAvatar;
           document.getElementById("profile-save").textContent = t().profileSave;
@@ -679,7 +691,7 @@
           if (description) text(screen, "p", description, "scene-copy");
         }
 
-        function addNovelDialogue(speaker, portrait = "🕵️", entries = null) {
+        function addNovelDialogue(speaker, portrait = "🕵️", entries = null, scene = "study") {
           let stage = screen.querySelector(".novel-stage");
           if (!stage) {
             stage = document.createElement("div");
@@ -687,6 +699,7 @@
             stage.setAttribute("aria-label", t().blackScene);
             screen.append(stage);
           }
+          stage.dataset.scene = scene;
           const panel = document.createElement("section");
           panel.className = "novel-dialogue";
           panel.setAttribute("aria-label", `${speaker} — ${t().dialogueLabel}`);
@@ -745,7 +758,7 @@
 
         function showScene() {
           setScreen(t().room, t().inspectRoom, "");
-          addNovelDialogue(t().detective, "🕵️", t().studyDialogues);
+          addNovelDialogue(t().detective, "🕵️", t().studyDialogues, "study");
           const evidenceActions = document.createElement("div");
           evidenceActions.className = "action-grid";
           t().areas.forEach((area, index) => {
@@ -798,7 +811,7 @@
 
         function showLanding() {
           setScreen(t().caseNumber, t().introTitle, "");
-          addNovelDialogue(t().detective, "🕵️", t().openingDialogues);
+          addNovelDialogue(t().detective, "🕵️", t().openingDialogues, "opening");
           button(screen, t().start, "start").classList.add("start-button");
         }
 
@@ -825,7 +838,7 @@
             state.stage = progress.stage;
             updateStatus();
             setScreen(t().inspectLabel, t().areas[index].title, t().areas[index].description);
-            addNovelDialogue(t().detective, "🕵️", t().clueDialogues[index]);
+            addNovelDialogue(t().detective, "🕵️", t().clueDialogues[index], "evidence");
             text(screen, "div", t().clues[index], "game-result");
             button(screen, t().continue, "view", "scene");
           } catch (error) {
@@ -845,7 +858,7 @@
             thomas: "🧑🏻",
             may: "👩🏽",
           };
-          addNovelDialogue(details.name, portraits[suspect.id] || "👤", t().interviewDialogues[suspect.id]);
+          addNovelDialogue(details.name, portraits[suspect.id] || "👤", t().interviewDialogues[suspect.id], "interview");
           text(screen, "div", `${t().motive}: ${details.motive}`, "game-result");
           const actions = document.createElement("div");
           actions.className = "action-grid";
@@ -963,7 +976,7 @@
             if (!response.ok) throw new Error(`Server error: ${response.status}`);
             const verdict = await response.json();
             setScreen(t().revealed, verdict.correct ? t().rightTitle : t().wrongTitle, verdict.correct ? t().rightMessage : t().wrongMessage);
-            if (verdict.correct) addNovelDialogue(t().detective, "🕵️", t().revealDialogues);
+            if (verdict.correct) addNovelDialogue(t().detective, "🕵️", t().revealDialogues, "reveal");
             text(screen, "div", verdict.correct ? t().rightSummary : t().wrongSummary, `game-result${verdict.correct ? "" : " wrong"}`);
             if (verdict.correct) {
               state.view = "scene";
@@ -1148,6 +1161,28 @@
         });
 
         languageSelect.addEventListener("change", () => setLanguage(languageSelect.value));
+
+        function setProfileDrawerOpen(isOpen) {
+          accountPanel.classList.toggle("is-open", isOpen);
+          accountBackdrop.classList.toggle("is-open", isOpen);
+          accountPanel.setAttribute("aria-hidden", String(!isOpen));
+          accountPanel.inert = !isOpen;
+          profileToggle.setAttribute("aria-expanded", String(isOpen));
+          profileToggle.setAttribute("aria-label", isOpen ? t().hideProfile : t().showProfile);
+          if (isOpen) profileDrawerClose.focus({ preventScroll: true });
+          else profileToggle.focus({ preventScroll: true });
+        }
+
+        profileToggle.addEventListener("click", () => {
+          setProfileDrawerOpen(!accountPanel.classList.contains("is-open"));
+        });
+        profileDrawerClose.addEventListener("click", () => setProfileDrawerOpen(false));
+        accountBackdrop.addEventListener("click", () => setProfileDrawerOpen(false));
+        document.addEventListener("keydown", (event) => {
+          if (event.key === "Escape" && accountPanel.classList.contains("is-open")) {
+            setProfileDrawerOpen(false);
+          }
+        });
 
         openSettings.addEventListener("click", () => {
           settingsDialog.showModal();

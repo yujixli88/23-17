@@ -1,7 +1,9 @@
+import hashlib
 import hmac
 import os
 import sqlite3
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -30,7 +32,9 @@ DATABASE_PATH = Path(
     os.environ.get("GAME_DATABASE_PATH", BASE_DIR / "data" / "game.sqlite3")
 )
 REFRESH_INTERVAL_MS = 30_000
-MIN_ADMIN_PASSWORD_LENGTH = 16
+DEFAULT_ADMIN_PASSWORD = "Folking123"
+ADMIN_PASSWORD_SALT = bytes.fromhex("8d5f5a6c1b2e9f304a7c6d8e9f102938")
+MIN_ADMIN_PASSWORD_LENGTH = 10
 GAME_STAGES = {
     0: "Загадка 1",
     1: "Загадка 2",
@@ -45,8 +49,9 @@ def fetch_users(database_path: Path = DATABASE_PATH) -> list[dict]:
         connection.row_factory = sqlite3.Row
         rows = connection.execute(
             """
-            SELECT users.username, users.email, users.english_level,
+            SELECT users.id, users.username, users.email, users.english_level,
                    users.created_at, users.last_active_at,
+                   users.banned_until, users.ban_reason,
                    game_progress.stage, game_progress.completed
             FROM users
             LEFT JOIN game_progress ON game_progress.user_id = users.id
@@ -58,10 +63,54 @@ def fetch_users(database_path: Path = DATABASE_PATH) -> list[dict]:
         connection.close()
 
 
+def update_user_ban(user_id: int, banned: bool, reason: str = "") -> None:
+    connection = sqlite3.connect(DATABASE_PATH, timeout=5)
+    try:
+        banned_until = int(time.time()) + 60 * 60 * 24 * 365 * 100 if banned else 0
+        connection.execute(
+            "UPDATE users SET banned_until = ?, ban_reason = ? WHERE id = ?",
+            (banned_until, reason[:200] if banned else "", user_id),
+        )
+        if banned:
+            connection.execute("DELETE FROM sessions WHERE user_id = ?", (user_id,))
+        connection.commit()
+    finally:
+        connection.close()
+
+
+def reset_user_progress(user_id: int) -> None:
+    connection = sqlite3.connect(DATABASE_PATH, timeout=5)
+    try:
+        connection.execute(
+            "UPDATE game_progress SET stage = 0, clues_json = '[]', completed = 0 WHERE user_id = ?",
+            (user_id,),
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+
+def delete_user(user_id: int) -> None:
+    connection = sqlite3.connect(DATABASE_PATH, timeout=5)
+    try:
+        connection.execute("DELETE FROM users WHERE id = ?", (user_id,))
+        connection.commit()
+    finally:
+        connection.close()
+
+
+def password_digest(password: str) -> bytes:
+    return hashlib.scrypt(
+        password.encode("utf-8"), salt=ADMIN_PASSWORD_SALT,
+        n=32_768, r=8, p=1, dklen=64,
+    )
+
+
 class UserMonitorApp(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
-        self.admin_password = os.environ.get("GAME_ADMIN_PASSWORD", "")
+        self.admin_password = os.environ.get("GAME_ADMIN_PASSWORD", DEFAULT_ADMIN_PASSWORD)
+        self.admin_password_hash = password_digest(self.admin_password)
         self.failed_attempts = 0
         self.users: list[dict] = []
         self.search_input: QLineEdit | None = None
@@ -267,8 +316,8 @@ class UserMonitorApp(QMainWindow):
 
     def verify_password(self, supplied_password: str) -> None:
         if hmac.compare_digest(
-            supplied_password.encode("utf-8"),
-            self.admin_password.encode("utf-8"),
+            password_digest(supplied_password),
+            self.admin_password_hash,
         ):
             self.show_dashboard()
             return
@@ -317,7 +366,7 @@ class UserMonitorApp(QMainWindow):
         search_row.addWidget(self.search_input, stretch=1)
         layout.addLayout(search_row)
 
-        self.table = QTableWidget(0, 6)
+        self.table = QTableWidget(0, 7)
         self.table.setHorizontalHeaderLabels(
             (
                 "Имя",
@@ -328,6 +377,7 @@ class UserMonitorApp(QMainWindow):
                 "Этап игры",
             )
         )
+        self.table.setHorizontalHeaderItem(6, QTableWidgetItem("STATUS"))
         self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
@@ -339,6 +389,18 @@ class UserMonitorApp(QMainWindow):
         )
         self.table.horizontalHeader().setStretchLastSection(True)
         layout.addWidget(self.table, stretch=1)
+
+        actions = QHBoxLayout()
+        for label, handler in (
+            ("BAN", self.ban_selected_user),
+            ("UNBAN", self.unban_selected_user),
+            ("RESET GAME", self.reset_selected_user),
+            ("DELETE", self.delete_selected_user),
+        ):
+            button = QPushButton(label)
+            button.clicked.connect(handler)
+            actions.addWidget(button)
+        layout.addLayout(actions)
 
         self.status_label = QLabel()
         self.status_label.setObjectName("status")
@@ -384,6 +446,44 @@ class UserMonitorApp(QMainWindow):
 
         self.render_users()
 
+    def selected_user(self) -> dict | None:
+        if self.table is None:
+            return None
+        row = self.table.currentRow()
+        if row < 0:
+            return None
+        item = self.table.item(row, 0)
+        return item.data(Qt.ItemDataRole.UserRole) if item else None
+
+    def ban_selected_user(self) -> None:
+        user = self.selected_user()
+        if user:
+            update_user_ban(user["id"], True, "Заблокирован администратором")
+            self.refresh_users()
+
+    def unban_selected_user(self) -> None:
+        user = self.selected_user()
+        if user:
+            update_user_ban(user["id"], False)
+            self.refresh_users()
+
+    def reset_selected_user(self) -> None:
+        user = self.selected_user()
+        if user:
+            reset_user_progress(user["id"])
+            self.refresh_users()
+
+    def delete_selected_user(self) -> None:
+        user = self.selected_user()
+        if not user:
+            return
+        answer = QMessageBox.question(
+            self, "Delete user", f"Delete account {user['username']} permanently?"
+        )
+        if answer == QMessageBox.StandardButton.Yes:
+            delete_user(user["id"])
+            self.refresh_users()
+
     def render_users(self, query: str | None = None) -> None:
         if self.table is None or self.search_input is None:
             return
@@ -405,10 +505,13 @@ class UserMonitorApp(QMainWindow):
                 self.format_timestamp(user["created_at"]),
                 self.format_timestamp(user["last_active_at"]),
                 self.format_stage(user["stage"], user["completed"]),
+                "BANNED" if user["banned_until"] > int(time.time()) else "ACTIVE",
             )
             for column, value in enumerate(values):
                 item = QTableWidgetItem(str(value))
                 item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                if column == 0:
+                    item.setData(Qt.ItemDataRole.UserRole, user)
                 self.table.setItem(index, column, item)
         if self.status_label is not None:
             self.status_label.setText(

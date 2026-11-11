@@ -45,6 +45,12 @@ def get_current_session(request: Request) -> dict:
             status_code=401,
             detail={"code": "authentication_required", "message": "Please sign in."},
         )
+    if auth.is_user_banned(session["user"]["id"]):
+        auth.delete_session(session["session_hash"])
+        raise HTTPException(
+            status_code=403,
+            detail={"code": "user_banned", "message": "This account is banned."},
+        )
     return session
 
 
@@ -180,6 +186,12 @@ def login(payload: LoginPayload, request: Request, response: Response):
                 "code": "invalid_credentials",
                 "message": "Email or password is incorrect.",
             },
+        )
+    if auth.is_user_banned(user["id"]):
+        attempts.clear()
+        raise HTTPException(
+            status_code=403,
+            detail={"code": "user_banned", "message": "This account is banned."},
         )
     attempts.clear()
     cookie_value, csrf_token = auth.create_session(user["id"])
