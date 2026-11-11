@@ -6,7 +6,7 @@ from fastapi.templating import Jinja2Templates
 from pathlib import Path
 import models
 import schemas
-from password_utils import hash_password
+from password_utils import hash_password, verify_password
 from sqlalchemy.orm import Session
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -60,3 +60,20 @@ def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
   db.commit()
   db.refresh(new_user)
   return new_user
+
+
+@app.post("/api/login", response_model=schemas.UserResponse)
+def login_user(user: schemas.UserLogin, db: Session = Depends(get_db)):
+  db_user = (
+      db.query(models.User)
+      .filter(models.User.email == user.email)
+      .first()
+  )
+  if db_user is None or not verify_password(
+      user.password, db_user.hashed_password
+  ):
+    raise HTTPException(
+        status_code=401, detail="Invalid email or password"
+    )
+
+  return db_user

@@ -5,7 +5,7 @@ from pydantic import ValidationError
 
 import database
 from password_utils import hash_password, verify_password
-from schemas import UserCreate
+from schemas import UserCreate, UserLogin
 
 with patch.object(database.Base.metadata, "create_all"):
   import main
@@ -81,6 +81,71 @@ class PasswordValidationTests(unittest.TestCase):
 
     self.assertNotEqual(db.added_user.hashed_password, password)
     self.assertTrue(verify_password(password, db.added_user.hashed_password))
+
+  def test_login_returns_registered_user_with_valid_password(self):
+    password = "ЧудесныйПароль42!"
+    registered_user = main.models.User(
+        id=1,
+        email="player@example.com",
+        hashed_password=hash_password(password),
+        glitters=0,
+        rank_level="Базовый уровень",
+    )
+
+    class FakeQuery:
+      def filter(self, _condition):
+        return self
+
+      def first(self):
+        return registered_user
+
+    class FakeDatabase:
+      def query(self, _model):
+        return FakeQuery()
+
+    result = main.login_user(
+        UserLogin(email="player@example.com", password=password),
+        db=FakeDatabase(),
+    )
+
+    self.assertIs(result, registered_user)
+
+  def test_login_rejects_wrong_password_and_unknown_email(self):
+    password = "ЧудесныйПароль42!"
+    registered_user = main.models.User(
+        id=1,
+        email="player@example.com",
+        hashed_password=hash_password(password),
+    )
+
+    class FakeQuery:
+      def __init__(self, user):
+        self.user = user
+
+      def filter(self, _condition):
+        return self
+
+      def first(self):
+        return self.user
+
+    class FakeDatabase:
+      def __init__(self, user):
+        self.user = user
+
+      def query(self, _model):
+        return FakeQuery(self.user)
+
+    invalid_credentials = (
+        (UserLogin(email="player@example.com", password="WrongPassword1!"),
+         FakeDatabase(registered_user)),
+        (UserLogin(email="missing@example.com", password=password),
+         FakeDatabase(None)),
+    )
+    for credentials, db in invalid_credentials:
+      with self.subTest(email=credentials.email):
+        with self.assertRaises(main.HTTPException) as error:
+          main.login_user(credentials, db=db)
+        self.assertEqual(error.exception.status_code, 401)
 
 
 if __name__ == "__main__":

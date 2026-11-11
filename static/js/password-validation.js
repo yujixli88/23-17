@@ -45,6 +45,41 @@ function checkPassword() {
     return Object.values(valid).every(Boolean);
 }
 
+function generatePassword() {
+    const characterSets = [
+        "abcdefghijklmnopqrstuvwxyz",
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+        "0123456789",
+        "!@#$%^&*()-_=+[]{}?",
+    ];
+    const allCharacters = characterSets.join("");
+
+    function randomIndex(limit) {
+        const range = 0x100000000;
+        const max = Math.floor(range / limit) * limit;
+        const value = new Uint32Array(1);
+        do {
+            window.crypto.getRandomValues(value);
+        } while (value[0] >= max);
+        return value[0] % limit;
+    }
+
+    const characters = characterSets.map((set) => set[randomIndex(set.length)]);
+    for (let index = 0; index < 12; index += 1) {
+        characters.push(allCharacters[randomIndex(allCharacters.length)]);
+    }
+    for (let index = characters.length - 1; index > 0; index -= 1) {
+        const otherIndex = randomIndex(index + 1);
+        [characters[index], characters[otherIndex]] =
+            [characters[otherIndex], characters[index]];
+    }
+
+    passwordInput.value = characters.join("");
+    passwordInput.type = "text";
+    checkPassword();
+    passwordInput.focus();
+}
+
 passwordInput.addEventListener("input", checkPassword);
 emailInput.addEventListener("input", checkPassword);
 document.getElementById("register-form").addEventListener("submit", (event) => {

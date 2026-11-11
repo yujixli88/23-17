@@ -19,7 +19,7 @@ const story = [
     { speaker: "voice", text: "️ The Last Chime at 11:17 PM" },
     { speaker: "At 10:40 PM", text: "Arden announces:\n— Tomorrow morning, I’m going to make a few changes. And some of you are not going to like them one bit.\nEveryone takes his words as yet another act of manipulation." },
     { speaker: "At 11:05 PM", text: "️ Arden retires to his study. " },
-    { speaker: "At 11:17 PM", text: "️the chime of an antique grandfather clock echoes throughout the hotel. " },
+    { speaker: "At 11:17 PM", text: "️The chime of an antique grandfather clock echoes throughout the hotel. " },
     { speaker: "At 11:17 PM", text: "Eleven strikes."},
     { speaker: "At 11:17 PM", text: "️And then — one more.The chime of an antique grandfather clock echoes throughout the hotel." },
     { speaker: "At 11:17 PM", text: "️Eleven strikes. " },
