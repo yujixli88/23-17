@@ -40,10 +40,10 @@ class AuthenticationAndProgressTests(unittest.TestCase):
 
     def test_game_page_loads_external_javascript(self):
         page = self.client.get("/")
-        script = self.client.get("/game.js?v=6")
+        script = self.client.get("/game.js?v=17")
 
         self.assertEqual(page.status_code, 200)
-        self.assertIn('<script src="/game.js?v=6" defer></script>', page.text)
+        self.assertIn('<script src="/game.js?v=17" defer></script>', page.text)
         self.assertIn('id="open-settings"', page.text)
         self.assertIn('id="settings-dialog"', page.text)
         self.assertEqual(script.status_code, 200)
@@ -52,6 +52,24 @@ class AuthenticationAndProgressTests(unittest.TestCase):
         self.assertIn('settingsDialog.showModal()', script.text)
         self.assertIn('levelSelect.name = "english_level"', script.text)
         self.assertIn("payload.english_level", script.text)
+        self.assertIn("dialogue-choices", script.text)
+        self.assertIn("sceneChoices", script.text)
+
+    def test_crime_vocabulary_is_protected_and_complete(self):
+        self.assertEqual(self.client.get("/api/game/vocabulary").status_code, 401)
+        self.register()
+
+        response = self.client.get("/api/game/vocabulary")
+
+        self.assertEqual(response.status_code, 200)
+        exercises = response.json()["exercises"]
+        games = response.json()["games"]
+        self.assertEqual(len(exercises), 10)
+        self.assertEqual(exercises[0]["id"], 1)
+        self.assertIn("theft", exercises[0]["title"].casefold())
+        self.assertEqual(exercises[-1]["id"], 10)
+        self.assertEqual([game["id"] for game in games], ["crime-quiz", "word-detective", "mini-mystery"])
+        self.assertTrue(all(len(game["questions"]) == 5 for game in games))
 
     def test_registration_level_and_admin_user_view(self):
         response = self.register("b2@example.com", english_level="B2")
@@ -182,6 +200,47 @@ class AuthenticationAndProgressTests(unittest.TestCase):
         self.assertNotEqual(saved["password_hash"], "a-long-test-password")
         self.assertNotEqual(saved["password_hash"], saved["password_salt"])
 
+    def test_admin_delete_removes_account_data_and_frees_credentials(self):
+        registered = self.register("delete-me@example.com")
+        self.assertEqual(registered.status_code, 200)
+        user_id = registered.json()["user"]["id"]
+
+        admin_app.delete_user(user_id, auth.DATABASE_PATH)
+
+        with auth.connect() as connection:
+            self.assertIsNone(
+                connection.execute(
+                    "SELECT 1 FROM users WHERE id = ?", (user_id,)
+                ).fetchone()
+            )
+            self.assertIsNone(
+                connection.execute(
+                    "SELECT 1 FROM sessions WHERE user_id = ?", (user_id,)
+                ).fetchone()
+            )
+            self.assertIsNone(
+                connection.execute(
+                    "SELECT 1 FROM game_progress WHERE user_id = ?", (user_id,)
+                ).fetchone()
+            )
+
+        recreated = self.register("delete-me@example.com")
+        self.assertEqual(recreated.status_code, 200)
+
+    def test_legacy_orphan_progress_does_not_block_new_registration(self):
+        registered = self.register("legacy-delete@example.com")
+        self.assertEqual(registered.status_code, 200)
+        user_id = registered.json()["user"]["id"]
+
+        # Reproduce the old admin deletion behavior: the user row was deleted
+        # while foreign-key enforcement was disabled, leaving game_progress.
+        with sqlite3.connect(auth.DATABASE_PATH) as connection:
+            connection.execute("PRAGMA foreign_keys = OFF")
+            connection.execute("DELETE FROM users WHERE id = ?", (user_id,))
+
+        recreated = self.register("legacy-delete@example.com")
+        self.assertEqual(recreated.status_code, 200)
+
     def test_login_and_protected_game_endpoints(self):
         self.assertEqual(self.client.get("/api/game").status_code, 401)
         self.register()
@@ -200,6 +259,13 @@ class AuthenticationAndProgressTests(unittest.TestCase):
         )
         self.assertEqual(valid_login.status_code, 200)
         self.assertTrue(self.client.get("/api/game").json()["suspects"])
+
+        self.client.post("/api/auth/logout", headers=self.csrf_headers())
+        username_login = self.client.post(
+            "/api/auth/login",
+            json={"email": "CaseSolver", "password": "a-long-test-password"},
+        )
+        self.assertEqual(username_login.status_code, 200)
 
     def test_puzzle_progress_is_validated_saved_and_resumable(self):
         self.assertEqual(self.client.get("/api/game/challenge").status_code, 401)
