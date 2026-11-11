@@ -6,6 +6,7 @@ from fastapi.templating import Jinja2Templates
 from pathlib import Path
 import models
 import schemas
+from password_utils import hash_password
 from sqlalchemy.orm import Session
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -51,7 +52,7 @@ def register_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
 
   new_user = models.User(
       email=user.email,
-      hashed_password=user.password,
+      hashed_password=hash_password(user.password),
       glitters=0,
       rank_level="Базовый уровень",
   )

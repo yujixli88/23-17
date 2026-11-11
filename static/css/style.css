@@ -54,31 +54,118 @@ body, html {
     border-color: #c0392b;
     background: rgba(192, 57, 43, 0.2);
 }
+.language-switch {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 20px;
+}
+.language-switch button {
+    border: 1px solid #70403b;
+    border-radius: 3px;
+    background: #191316;
+    color: #e0c3bd;
+    padding: 6px 12px;
+    font: inherit;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+.language-switch button:hover,
+.language-switch button:focus-visible {
+    border-color: #c0392b;
+    background: #48201e;
+}
 
 .modal {
     display: none;
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.8);
+    background: rgba(5, 5, 8, 0.84);
+    backdrop-filter: blur(5px);
     justify-content: center;
     align-items: center;
     z-index: 50;
 }
 .modal-content {
-    background: #141414;
-    border: 2px solid #555;
+    position: relative;
+    background: linear-gradient(145deg, #211616, #111014 70%);
+    border: 1px solid #87463e;
     padding: 30px;
-    width: 300px;
+    width: min(360px, calc(100vw - 60px));
+    max-height: calc(100vh - 60px);
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
     gap: 15px;
+    box-shadow: 0 0 0 1px rgba(192, 57, 43, 0.12), 0 18px 60px #000,
+        0 0 35px rgba(192, 57, 43, 0.18);
+}
+.modal-content h3 {
+    margin: 0;
+    color: #d16a5d;
+    font-size: 23px;
+    letter-spacing: 2px;
+    text-align: center;
+    text-transform: uppercase;
+}
+.modal-content form {
+    width: 100%;
 }
 .modal-content input {
-    background: #0a0a0a;
-    border: 1px solid #444;
-    color: #fff;
-    padding: 8px;
-    font-family: inherit;
+    box-sizing: border-box;
+    width: 100%;
+    border: 1px solid #60413e;
+    border-radius: 3px;
+    background: rgba(8, 8, 10, 0.85);
+    color: #f0e8e4;
+    padding: 12px;
+    font: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.modal-content input:focus {
+    outline: none;
+    border-color: #c0392b;
+    box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.16);
+}
+.modal-content input::placeholder {
+    color: #9c8985;
+}
+.modal-content .menu-btn-main {
+    width: 100%;
+    border-radius: 3px;
+}
+.modal-content button[type="submit"] {
+    border-color: #a7473c;
+    background: linear-gradient(110deg, #762c27, #a23d32);
+}
+.modal-content button[type="submit"]:hover {
+    background: linear-gradient(110deg, #943a32, #c04a3c);
+}
+.modal-content button[type="button"] {
+    color: #c5b7b2;
+}
+.password-requirements {
+    margin: 0;
+    padding: 12px 14px;
+    list-style: none;
+    border-left: 2px solid #70342f;
+    background: rgba(7, 7, 9, 0.5);
+    color: #c58f88;
+    font-size: 13px;
+    line-height: 1.6;
+}
+.password-requirements li.valid {
+    color: #91bd9a;
+}
+.criterion-status {
+    display: inline-block;
+    width: 1.4em;
+}
+.register-message {
+    min-height: 1.5em;
+    margin: 0;
+    color: #e0a19b;
+    line-height: 1.5;
 }
 
 .game-container {
@@ -112,8 +199,10 @@ body, html {
 
 .dialogue-box {
     position: relative; width: 80%; max-width: 900px;
-    background: rgba(12, 12, 12, 0.92); border: 2px solid #555;
+    background: linear-gradient(135deg, rgba(28, 17, 18, 0.96), rgba(10, 10, 12, 0.94));
+    border: 1px solid #74413c;
     border-radius: 8px; padding: 25px 35px; cursor: pointer;
+    box-shadow: 0 12px 38px rgba(0, 0, 0, 0.6), 0 0 26px rgba(125, 43, 36, 0.14);
 }
-.speaker-name { font-size: 16px; font-weight: bold; color: #c0392b; margin-bottom: 8px; text-transform: uppercase; }
+.speaker-name { font-size: 16px; font-weight: bold; color: #d16a5d; margin-bottom: 8px; text-transform: uppercase; }
 .dialogue-text { font-size: 16px; line-height: 1.6; min-height: 50px; }

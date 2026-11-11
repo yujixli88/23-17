@@ -7,7 +7,9 @@ window.onload = function() {
     if (savedUser) {
         const user = JSON.parse(savedUser);
         document.getElementById('profile-status').innerText = user.email;
-        document.getElementById('rank-display').innerText = user.rank_level;
+        document.getElementById('rank-display').innerText = user.rank_level === "Базовый уровень"
+            ? "Basic level"
+            : user.rank_level;
         document.getElementById('glitters-display').innerText = user.glitters;
         glitters = user.glitters;
     }

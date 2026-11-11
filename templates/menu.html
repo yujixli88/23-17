@@ -42,18 +42,56 @@
                 Регистрация
             </h3>
 
-            <form onsubmit="submitRegistration(event)">
+            <form id="register-form" onsubmit="submitRegistration(event)">
                 <input type="email" id="regEmail"
+                       name="email" autocomplete="email"
                        data-ru-placeholder="Почта"
                        data-en-placeholder="Email"
                        placeholder="Почта" required
                        style="width:100%; margin-bottom:10px;">
 
                 <input type="password" id="regPassword"
+                       name="password" autocomplete="new-password"
                        data-ru-placeholder="Пароль"
                        data-en-placeholder="Password"
                        placeholder="Пароль" required
                        style="width:100%; margin-bottom:15px;">
+
+                <ul class="password-requirements" aria-live="polite">
+                    <li id="length">
+                        <span class="criterion-status" aria-hidden="true"></span>
+                        <span data-ru="Не менее 10 символов"
+                              data-en="At least 10 characters">Не менее 10 символов</span>
+                    </li>
+                    <li id="lowercase">
+                        <span class="criterion-status" aria-hidden="true"></span>
+                        <span data-ru="Есть строчная буква"
+                              data-en="Contains a lowercase letter">Есть строчная буква</span>
+                    </li>
+                    <li id="uppercase">
+                        <span class="criterion-status" aria-hidden="true"></span>
+                        <span data-ru="Есть заглавная буква"
+                              data-en="Contains an uppercase letter">Есть заглавная буква</span>
+                    </li>
+                    <li id="number">
+                        <span class="criterion-status" aria-hidden="true"></span>
+                        <span data-ru="Есть цифра"
+                              data-en="Contains a digit">Есть цифра</span>
+                    </li>
+                    <li id="symbol">
+                        <span class="criterion-status" aria-hidden="true"></span>
+                        <span data-ru="Есть специальный символ"
+                              data-en="Contains a special character">Есть специальный символ</span>
+                    </li>
+                    <li id="personal" hidden>
+                        <span data-ru="Рекомендация: не включайте часть email до @ в пароль"
+                              data-en="Tip: do not include the part of your email before @ in your password">
+                            Рекомендация: не включайте часть email до @ в пароль
+                        </span>
+                    </li>
+                </ul>
+                <p id="register-message" class="register-message"
+                   role="status" aria-live="polite"></p>
 
                 <button type="submit" class="menu-btn-main"
                         style="width:100%;"
@@ -71,6 +109,7 @@
         </div>
     </div>
 
+    <script src="/static/js/password-validation.js"></script>
     <script src="/static/js/auth.js"></script>
     <script src="/static/js/language.js"></script>
 </body>

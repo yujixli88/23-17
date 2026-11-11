@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Игра - Сюжет</title>
+    <title data-ru="Игра - Сюжет" data-en="Game - Story">Игра - Сюжет</title>
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
@@ -19,25 +19,30 @@
 
             <div class="profile-section" style="border:1px solid #333; padding:10px; text-align:center; margin-bottom:15px;">
                 <div style="color:#c0392b; font-size:20px;">👤</div>
-                <div id="profile-status" style="font-size:12px; color:#aaa; margin-top:5px;">Гость</div>
+                <div id="profile-status" data-ru="Гость" data-en="Guest"
+                     style="font-size:12px; color:#aaa; margin-top:5px;">Гость</div>
             </div>
 
             <div class="rank-box" style="background:#141414; border:1px solid #444; padding:8px; margin-bottom:15px; font-size:12px; display:flex; justify-content:space-between;">
-                <div>Ранг: <span id="rank-display" style="color:#f1c40f;">Базовый</span></div>
+                <div><span data-ru="Ранг:" data-en="Rank:">Ранг:</span>
+                    <span id="rank-display" data-ru="Базовый уровень" data-en="Basic level"
+                          style="color:#f1c40f;">Базовый уровень</span>
+                </div>
                 <div>✨ <span id="glitters-display" style="color:#3498db;">0</span></div>
             </div>
 
-            <div style="background:#111; border:1px solid #333; padding:8px; margin-bottom:15px; font-size:12px;">
-            </div>
-
-            <button class="menu-btn-main" onclick="goToMenu()" style="margin-top:auto; width:100%; font-size:12px; padding:8px;">В главное меню</button>
+            <button class="menu-btn-main" onclick="goToMenu()"
+                    data-ru="В главное меню" data-en="Back to main menu"
+                    style="margin-top:auto; width:100%; font-size:12px; padding:8px;">В главное меню</button>
         </div>
 
         <!-- Окно диалога -->
         <div class="dialogue-box" onclick="nextLine()">
             <div class="speaker-name" id="speaker"></div>
             <div class="dialogue-text" id="text"></div>
+        </div>
     </div>
-    <script src="/static/js/game.js"></script>
+    <script src="/static/js/language.js"></script>
+    <script src="/static/js/game-loader.js"></script>
 </body>
 </html>
