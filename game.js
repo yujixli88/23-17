@@ -8,6 +8,7 @@
         const gameWindow = document.getElementById("game-window");
         const accountGuests = document.getElementById("account-guests");
         const accountNotebookButton = document.getElementById("account-notebook-button");
+        const accountVocabularyButton = document.getElementById("account-vocabulary-button");
         const accountStartGame = document.getElementById("account-start-game");
         const accountLogout = document.getElementById("account-logout");
         const profileOpen = document.getElementById("profile-open");
@@ -61,16 +62,26 @@
             detective: "Детектив",
             dialogueLabel: "Реплика персонажа",
             dialogueContinue: "Далее",
+            chooseAction: "Выберите следующее действие",
             placeholderDialogue: "1",
             blackScene: "Сцена игры",
             notebook: "Блокнот улик",
             notebookButton: "Блокнот улик",
+            vocabularyButton: "Crime vocabulary",
+            vocabularyKicker: "English practice",
+            vocabularyTitle: "Crime vocabulary",
+            vocabularyIntro: "Train your detective English with vocabulary, collocations and a mini mystery.",
+            showAnswer: "Show answer key",
+            backToGame: "Back to investigation",
+            vocabularyError: "Could not load the vocabulary practice.",
+            loginRateLimited: "Too many login attempts. Wait a little and try again.",
             emptyClues: "Начните расследование, чтобы собирать улики.",
             signIn: "Войти",
             signUp: "Создать аккаунт",
             authIntro: "Войдите или создайте аккаунт. Прогресс расследования будет сохранён.",
             username: "Имя пользователя",
             email: "Электронная почта",
+            loginIdentifier: "Почта или имя пользователя",
             englishLevel: "Уровень английского",
             password: "Пароль (не менее 12 символов)",
             loginButton: "Войти",
@@ -243,16 +254,26 @@
             detective: "Detective",
             dialogueLabel: "Character dialogue",
             dialogueContinue: "Continue",
+            chooseAction: "Choose your next action",
             placeholderDialogue: "1",
             blackScene: "Game scene",
             notebook: "Clue notebook",
             notebookButton: "Clue notebook",
+            vocabularyButton: "Crime vocabulary",
+            vocabularyKicker: "English practice",
+            vocabularyTitle: "Crime vocabulary",
+            vocabularyIntro: "Train your detective English with vocabulary, collocations and a mini mystery.",
+            showAnswer: "Show answer key",
+            backToGame: "Back to investigation",
+            vocabularyError: "Could not load the vocabulary practice.",
             emptyClues: "Start the investigation to collect clues.",
+            loginRateLimited: "Too many login attempts. Wait a little and try again.",
             signIn: "Sign in",
             signUp: "Create an account",
             authIntro: "Sign in or create an account. Your investigation progress will be saved.",
             username: "Username",
             email: "Email address",
+            loginIdentifier: "Email or username",
             englishLevel: "English level",
             password: "Password (at least 12 characters)",
             loginButton: "Sign in",
@@ -444,11 +465,13 @@
           accountLogout.textContent = t().signOut;
           accountGuests.disabled = !state.user;
           accountNotebookButton.disabled = !state.user;
+          accountVocabularyButton.disabled = !state.user;
           accountStartGame.disabled = !state.user;
           accountStartGame.textContent = t().playButton;
           document.getElementById("account-guests").textContent = t().guestsButton;
           accountNotebookButton.textContent = t().notebookButton;
           document.getElementById("notebook-heading").textContent = t().notebook;
+          accountVocabularyButton.textContent = t().vocabularyButton;
           document.getElementById("minimize-game").setAttribute("aria-label", t().minimize);
           document.getElementById("minimize-game").title = t().minimize;
           restoreGame.textContent = t().restore;
@@ -481,8 +504,14 @@
 
           const form = document.createElement("form");
           form.className = "auth-form";
-          const emailInput = addField(form, "email", t().email, "email", true);
-          emailInput.autocomplete = "email";
+          const emailInput = addField(
+            form,
+            "email",
+            mode === "register" ? t().email : t().loginIdentifier,
+            mode === "register" ? "email" : "text",
+            true
+          );
+          emailInput.autocomplete = mode === "register" ? "email" : "username";
           emailInput.maxLength = 254;
 
           if (mode === "register") {
@@ -586,7 +615,10 @@
               );
               const result = await response.json();
               if (!response.ok) {
-                errorBox.textContent = authErrorMessage(result.detail);
+                errorBox.textContent = authErrorMessage(
+                  result.detail,
+                  response.headers.get("Retry-After")
+                );
                 return;
               }
               state.csrfToken = result.csrf_token;
@@ -614,12 +646,18 @@
           }
         }
 
-        function authErrorMessage(detail) {
+        function authErrorMessage(detail, retryAfter = "") {
           const code = detail && typeof detail === "object" ? detail.code : "";
           if (code === "email_taken") return t().emailTaken;
           if (code === "username_taken") return t().usernameTaken;
           if (code === "password") return t().weakPassword;
           if (code === "invalid_credentials") return t().authFailed;
+          if (code === "login_rate_limited") {
+            const seconds = Number.parseInt(retryAfter, 10);
+            return Number.isFinite(seconds) && seconds > 0
+              ? `${t().loginRateLimited} (${seconds} sec.)`
+              : t().loginRateLimited;
+          }
           return detail && detail.message ? detail.message : t().authFailed;
         }
 
@@ -691,7 +729,7 @@
           if (description) text(screen, "p", description, "scene-copy");
         }
 
-        function addNovelDialogue(speaker, portrait = "🕵️", entries = null, scene = "study") {
+        function addNovelDialogue(speaker, portrait = "🕵️", entries = null, scene = "study", choices = []) {
           let stage = screen.querySelector(".novel-stage");
           if (!stage) {
             stage = document.createElement("div");
@@ -713,17 +751,35 @@
           const sequence = entries && entries.length ? entries : [{ speaker, portrait, line: t().placeholderDialogue }];
           const nextButton = text(copyPanel, "button", t().dialogueContinue, "action-button");
           nextButton.type = "button";
+          const choicesPanel = document.createElement("div");
+          choicesPanel.className = "dialogue-choices";
+          choicesPanel.hidden = true;
           nextButton.addEventListener("click", () => {
             sequenceIndex = Math.min(sequenceIndex + 1, sequence.length - 1);
             renderEntry();
           });
           let sequenceIndex = 0;
+          function renderChoices() {
+            if (!choices.length) return;
+            panel.replaceChildren();
+            text(panel, "div", t().chooseAction, "novel-speaker");
+            choicesPanel.replaceChildren();
+            choicesPanel.hidden = false;
+            choices.forEach((choice) => {
+              const choiceButton = button(choicesPanel, choice.label, choice.action, choice.value);
+              choiceButton.className = "dialogue-choice";
+            });
+            panel.append(choicesPanel);
+          }
           function renderEntry() {
             const entry = sequence[sequenceIndex];
             speakerNode.textContent = entry.speaker;
             lineNode.textContent = entry.line;
             image.textContent = entry.portrait || portrait;
             nextButton.hidden = sequenceIndex === sequence.length - 1;
+            if (sequenceIndex === sequence.length - 1 && choices.length) {
+              renderChoices();
+            }
           }
           renderEntry();
           panel.append(copyPanel);
@@ -736,6 +792,7 @@
             : t().noCase;
           accountGuests.disabled = !state.user;
           accountNotebookButton.disabled = !state.user;
+          accountVocabularyButton.disabled = !state.user;
           accountStartGame.disabled = !state.user;
           accountGuests.classList.toggle("active", state.view === "suspects");
           accountNotebookButton.classList.toggle("active", state.view === "journal");
@@ -756,16 +813,147 @@
           });
         }
 
+        function renderVocabularyGame(game) {
+          let questionIndex = 0;
+          let score = 0;
+
+          function renderQuestion() {
+            const question = game.questions[questionIndex];
+            setScreen(
+              game.title,
+              `Question ${questionIndex + 1} / ${game.questions.length}`,
+              `Score: ${score} · ${game.description}`
+            );
+            text(screen, "p", question.prompt, "scene-copy");
+
+            const choices = document.createElement("div");
+            choices.className = "action-grid";
+            question.options.forEach((option) => {
+              const choice = button(choices, option, "vocabulary-choice");
+              choice.addEventListener("click", () => {
+                choices.querySelectorAll("button").forEach((item) => {
+                  item.disabled = true;
+                });
+                const correct = option === question.answer;
+                if (correct) score += 1;
+                choice.classList.add(correct ? "correct" : "wrong");
+                text(
+                  screen,
+                  "p",
+                  correct ? "Correct! +1 point" : `Not quite. The answer is: ${question.answer}`,
+                  correct ? "game-result" : "game-result wrong"
+                );
+                const next = button(
+                  screen,
+                  questionIndex + 1 < game.questions.length ? "Next question" : "See result",
+                  "vocabulary-next"
+                );
+                next.className = "start-button";
+                next.addEventListener("click", () => {
+                  questionIndex += 1;
+                  if (questionIndex < game.questions.length) renderQuestion();
+                  else renderVocabularyResult(game, score);
+                });
+              });
+            });
+            screen.append(choices);
+            const back = button(screen, "Back to vocabulary", "vocabulary-home");
+            back.className = "quiet-button";
+          }
+
+          renderQuestion();
+        }
+
+        function renderVocabularyResult(game, score) {
+          const total = game.questions.length;
+          const percentage = Math.round((score / total) * 100);
+          setScreen(game.title, "Game complete!", `Your score: ${score} / ${total} (${percentage}%).`);
+          text(
+            screen,
+            "p",
+            percentage === 100
+              ? "Perfect detective work!"
+              : percentage >= 60
+                ? "Good investigation. Try once more to improve your score."
+                : "Review the vocabulary and try again.",
+            "game-result"
+          );
+          const again = button(screen, "Play again", "vocabulary-replay");
+          again.className = "start-button";
+          again.addEventListener("click", () => renderVocabularyGame(game));
+          const back = button(screen, "Back to vocabulary", "vocabulary-home");
+          back.className = "quiet-button";
+        }
+
+        function renderVocabularyHome(result) {
+          setScreen(t().vocabularyKicker, t().vocabularyTitle, t().vocabularyIntro);
+
+          text(screen, "h3", "Mini-games", "section-title");
+          const games = document.createElement("div");
+          games.className = "game-list";
+          result.games.forEach((game) => {
+            const card = document.createElement("article");
+            card.className = "game-list-item";
+            text(card, "h3", game.title);
+            text(card, "p", game.description);
+            text(card, "p", `${game.questions.length} questions · 1 point for each correct answer`, "scene-copy");
+            const start = button(card, "Start game", "vocabulary-start");
+            start.className = "start-button";
+            start.addEventListener("click", () => renderVocabularyGame(game));
+            games.append(card);
+          });
+          screen.append(games);
+
+          text(screen, "h3", "Practice exercises", "section-title");
+          const list = document.createElement("div");
+          list.className = "game-list";
+          result.exercises.forEach((exercise) => {
+            const card = document.createElement("article");
+            card.className = "game-list-item";
+            text(card, "h3", exercise.title);
+            text(card, "p", exercise.instruction);
+            (exercise.items || []).forEach((item) => text(card, "p", item));
+            (exercise.options || []).forEach((option) => text(card, "p", option));
+
+            const answerDetails = document.createElement("details");
+            const answerSummary = text(answerDetails, "summary", t().showAnswer);
+            answerSummary.className = "action-button";
+            text(answerDetails, "p", exercise.answer);
+            card.append(answerDetails);
+            list.append(card);
+          });
+          screen.append(list);
+          const back = button(screen, t().backToGame, "vocabulary-back");
+          back.className = "start-button";
+        }
+
+        async function showVocabulary() {
+          try {
+            const response = await apiFetch("/api/game/vocabulary");
+            if (response.status === 401) {
+              state.csrfToken = "";
+              showAuth("login", t().csrfError);
+              return;
+            }
+            if (!response.ok) throw new Error(`Could not load vocabulary: ${response.status}`);
+            const result = await response.json();
+            renderVocabularyHome(result);
+          } catch (error) {
+            setScreen(t().connectionError, t().vocabularyError, t().vocabularyError);
+            console.error(error);
+          }
+        }
+
         function showScene() {
           setScreen(t().room, t().inspectRoom, "");
-          addNovelDialogue(t().detective, "🕵️", t().studyDialogues, "study");
-          const evidenceActions = document.createElement("div");
-          evidenceActions.className = "action-grid";
-          t().areas.forEach((area, index) => {
-            const examine = button(evidenceActions, `${t().examine}: ${area.title}`, "inspect", index);
-            examine.disabled = state.clues.has(index);
-          });
-          screen.append(evidenceActions);
+          const sceneChoices = t().areas
+            .map((area, index) => ({
+              label: `${t().examine}: ${area.title}`,
+              action: "inspect",
+              value: index,
+            }))
+            .filter((choice) => !state.clues.has(choice.value));
+          addNovelDialogue(t().detective, "🕵️", t().studyDialogues, "study", sceneChoices);
           if (state.stage < 2) {
             button(screen, state.stage === 0 ? t().solveChallenge : t().resumeChallenge, "challenge");
           } else {
@@ -811,8 +999,9 @@
 
         function showLanding() {
           setScreen(t().caseNumber, t().introTitle, "");
-          addNovelDialogue(t().detective, "🕵️", t().openingDialogues, "opening");
-          button(screen, t().start, "start").classList.add("start-button");
+          addNovelDialogue(t().detective, "🕵️", t().openingDialogues, "opening", [
+            { label: t().start, action: "start" },
+          ]);
         }
 
         function renderView() {
@@ -1034,6 +1223,12 @@
             showChallenge();
           } else if (action === "accuse") {
             accuse(value);
+          } else if (action === "vocabulary-back") {
+            state.view = "scene";
+            updateStatus();
+            renderView();
+          } else if (action === "vocabulary-home") {
+            showVocabulary();
           }
         });
 
@@ -1055,6 +1250,12 @@
           state.view = "journal";
           updateStatus();
           renderView();
+        });
+
+        accountVocabularyButton.addEventListener("click", () => {
+          gameWindow.classList.remove("minimized");
+          restoreGame.hidden = true;
+          showVocabulary();
         });
 
         accountStartGame.addEventListener("click", () => {

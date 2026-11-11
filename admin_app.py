@@ -7,8 +7,8 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from PySide6.QtCore import Qt, QTimer
-from PySide6.QtWidgets import (
+from PySide6.QtCore import Qt, QTimer 
+from PySide6.QtWidgets import (  
     QAbstractItemView,
     QApplication,
     QBoxLayout,
@@ -26,15 +26,15 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+import database
 
-BASE_DIR = Path(__file__).resolve().parent
-DATABASE_PATH = Path(
-    os.environ.get("GAME_DATABASE_PATH", BASE_DIR / "data" / "game.sqlite3")
-)
+
+DATABASE_PATH = database.DATABASE_PATH
 REFRESH_INTERVAL_MS = 30_000
 DEFAULT_ADMIN_PASSWORD = "Folking123"
 ADMIN_PASSWORD_SALT = bytes.fromhex("8d5f5a6c1b2e9f304a7c6d8e9f102938")
 MIN_ADMIN_PASSWORD_LENGTH = 10
+ADMIN_SCRYPT_MAXMEM = 64 * 1024 * 1024
 GAME_STAGES = {
     0: "Загадка 1",
     1: "Загадка 2",
@@ -90,19 +90,18 @@ def reset_user_progress(user_id: int) -> None:
         connection.close()
 
 
-def delete_user(user_id: int) -> None:
-    connection = sqlite3.connect(DATABASE_PATH, timeout=5)
-    try:
+def delete_user(user_id: int, database_path: Path = DATABASE_PATH) -> None:
+    """Delete the account and all data linked to it in one transaction."""
+    with database.connect(database_path) as connection:
+        connection.execute("DELETE FROM sessions WHERE user_id = ?", (user_id,))
+        connection.execute("DELETE FROM game_progress WHERE user_id = ?", (user_id,))
         connection.execute("DELETE FROM users WHERE id = ?", (user_id,))
-        connection.commit()
-    finally:
-        connection.close()
 
 
 def password_digest(password: str) -> bytes:
     return hashlib.scrypt(
         password.encode("utf-8"), salt=ADMIN_PASSWORD_SALT,
-        n=32_768, r=8, p=1, dklen=64,
+        n=32_768, r=8, p=1, dklen=64, maxmem=ADMIN_SCRYPT_MAXMEM,
     )
 
 

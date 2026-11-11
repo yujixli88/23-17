@@ -10,11 +10,11 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Iterator
 
+import database
+
 
 BASE_DIR = Path(__file__).resolve().parent
-DATABASE_PATH = Path(
-    os.environ.get("GAME_DATABASE_PATH", BASE_DIR / "data" / "game.sqlite3")
-)
+DATABASE_PATH = database.DATABASE_PATH
 PASSWORD_ITERATIONS = 600_000
 SESSION_LIFETIME = 60 * 60 * 24 * 7
 
@@ -41,69 +41,12 @@ SESSION_SECRET = _load_session_secret()
 
 @contextmanager
 def connect() -> Iterator[sqlite3.Connection]:
-    DATABASE_PATH.parent.mkdir(parents=True, exist_ok=True)
-    connection = sqlite3.connect(DATABASE_PATH, timeout=10)
-    connection.row_factory = sqlite3.Row
-    connection.execute("PRAGMA foreign_keys = ON")
-    try:
-        with connection:
-            yield connection
-    finally:
-        connection.close()
+    with database.connect(DATABASE_PATH) as connection:
+        yield connection
 
 
 def initialize_database() -> None:
-    with connect() as connection:
-        connection.executescript(
-            """
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY,
-                username TEXT NOT NULL COLLATE NOCASE UNIQUE,
-                email TEXT NOT NULL COLLATE NOCASE UNIQUE,
-                english_level TEXT NOT NULL DEFAULT 'B2',
-                password_salt TEXT NOT NULL,
-                password_hash TEXT NOT NULL,
-                created_at INTEGER NOT NULL,
-                last_active_at INTEGER NOT NULL DEFAULT 0,
-                banned_until INTEGER NOT NULL DEFAULT 0,
-                ban_reason TEXT NOT NULL DEFAULT ''
-            );
-            CREATE TABLE IF NOT EXISTS sessions (
-                session_hash TEXT PRIMARY KEY,
-                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-                csrf_token TEXT NOT NULL,
-                expires_at INTEGER NOT NULL
-            );
-            CREATE TABLE IF NOT EXISTS game_progress (
-                user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-                stage INTEGER NOT NULL DEFAULT 0,
-                clues_json TEXT NOT NULL DEFAULT '[]',
-                completed INTEGER NOT NULL DEFAULT 0
-            );
-            """
-        )
-        user_columns = {
-            row["name"] for row in connection.execute("PRAGMA table_info(users)")
-        }
-        if "english_level" not in user_columns:
-            connection.execute(
-                "ALTER TABLE users ADD COLUMN english_level TEXT NOT NULL DEFAULT 'B2'"
-            )
-        if "last_active_at" not in user_columns:
-            connection.execute(
-                "ALTER TABLE users ADD COLUMN last_active_at INTEGER NOT NULL DEFAULT 0"
-            )
-        if "banned_until" not in user_columns:
-            connection.execute(
-                "ALTER TABLE users ADD COLUMN banned_until INTEGER NOT NULL DEFAULT 0"
-            )
-        if "ban_reason" not in user_columns:
-            connection.execute(
-                "ALTER TABLE users ADD COLUMN ban_reason TEXT NOT NULL DEFAULT ''"
-            )
-        connection.execute(
-            "UPDATE users SET last_active_at = created_at WHERE last_active_at = 0"
-        )
+    database.initialize_database(DATABASE_PATH)
 
 
 def normalize_email(email: str) -> str:
@@ -190,6 +133,11 @@ def create_user(
                 now,
             ),
         )
+        # A legacy database may contain progress for a previously deleted user
+        # whose numeric id is reused by SQLite for this new account.
+        connection.execute(
+            "DELETE FROM game_progress WHERE user_id = ?", (cursor.lastrowid,)
+        )
         connection.execute(
             "INSERT INTO game_progress (user_id) VALUES (?)", (cursor.lastrowid,)
         )
@@ -201,11 +149,13 @@ def create_user(
         }
 
 
-def authenticate_user(email: str, password: str) -> dict | None:
-    normalized_email = normalize_email(email)
+def authenticate_user(identifier: str, password: str) -> dict | None:
+    """Authenticate by either the user's email address or username."""
+    normalized_identifier = normalize_email(identifier)
     with connect() as connection:
         user = connection.execute(
-            "SELECT * FROM users WHERE email = ?", (normalized_email,)
+            "SELECT * FROM users WHERE email = ? OR username = ?",
+            (normalized_identifier, normalized_identifier),
         ).fetchone()
 
     salt = bytes.fromhex(user["password_salt"]) if user else bytes(16)

@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 
 import auth
 from game_logic import accuse, check_challenge_answer, get_challenge, start_game
+from vocabulary import get_vocabulary_exercises, get_vocabulary_games
 
 
 app = FastAPI(title="The Last Chime")
@@ -85,10 +86,14 @@ def enforce_login_limit(request: Request) -> deque:
     while attempts and now - attempts[0] >= LOGIN_WINDOW_SECONDS:
         attempts.popleft()
     if len(attempts) >= LOGIN_MAX_ATTEMPTS:
+        retry_after = max(1, int(LOGIN_WINDOW_SECONDS - (now - attempts[0])))
         raise HTTPException(
             status_code=429,
-            detail={"code": "login_rate_limited", "message": "Try again later."},
-            headers={"Retry-After": str(LOGIN_WINDOW_SECONDS)},
+            detail={
+                "code": "login_rate_limited",
+                "message": "Too many login attempts. Try again later.",
+            },
+            headers={"Retry-After": str(retry_after)},
         )
     return attempts
 
@@ -156,7 +161,8 @@ def register(payload: RegisterPayload, response: Response):
             username, email, payload.password, english_level
         )
     except sqlite3.IntegrityError as error:
-        if not auth.email_availability(email):
+        error_text = str(error).casefold()
+        if "users.email" in error_text:
             raise HTTPException(
                 status_code=409,
                 detail={
@@ -164,9 +170,20 @@ def register(payload: RegisterPayload, response: Response):
                     "message": "This email is already registered.",
                 },
             ) from error
+        if "users.username" in error_text:
+            raise HTTPException(
+                status_code=409,
+                detail={
+                    "code": "username_taken",
+                    "message": "This username is already in use.",
+                },
+            ) from error
         raise HTTPException(
             status_code=409,
-            detail={"code": "username_taken", "message": "This username is already in use."},
+            detail={
+                "code": "database_conflict",
+                "message": "The account could not be created. Please try again.",
+            },
         ) from error
 
     cookie_value, csrf_token = auth.create_session(user["id"])
@@ -230,6 +247,14 @@ def get_game(session: dict = Depends(get_current_session)):
     game = start_game()
     game["progress"] = auth.get_progress(session["user"]["id"])
     return game
+
+
+@app.get("/api/game/vocabulary")
+def get_vocabulary(session: dict = Depends(get_current_session)):
+    return {
+        "exercises": get_vocabulary_exercises(),
+        "games": get_vocabulary_games(),
+    }
 
 
 @app.post("/api/game/restart")
