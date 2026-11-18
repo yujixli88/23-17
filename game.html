@@ -860,6 +860,100 @@
         text-align: center;
       }
 
+      .study-map {
+        position: relative;
+        min-height: clamp(320px, 48vw, 510px);
+        margin: 20px 0;
+        overflow: hidden;
+        border: 1px solid rgba(214, 173, 112, 0.35);
+        border-radius: 14px;
+        background:
+          linear-gradient(90deg, transparent 49.6%, rgba(214, 173, 112, 0.08) 50%, transparent 50.4%),
+          linear-gradient(0deg, transparent 49.6%, rgba(214, 173, 112, 0.08) 50%, transparent 50.4%),
+          radial-gradient(circle at 50% 45%, rgba(126, 82, 54, 0.28), transparent 52%),
+          linear-gradient(145deg, #30251f, #151719 62%, #101214);
+        box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.48);
+      }
+
+      .study-map::before,
+      .study-map::after {
+        position: absolute;
+        content: "";
+        pointer-events: none;
+      }
+
+      .study-map::before {
+        inset: 12% 8%;
+        border: 1px solid rgba(214, 173, 112, 0.18);
+        box-shadow: inset 0 0 0 14px rgba(10, 11, 12, 0.14);
+      }
+
+      .study-map::after {
+        left: 50%;
+        bottom: 0;
+        width: 36%;
+        height: 20%;
+        transform: translateX(-50%);
+        border: 1px solid rgba(214, 173, 112, 0.2);
+        border-bottom: 0;
+        background: rgba(8, 9, 10, 0.2);
+      }
+
+      .study-map-caption {
+        position: absolute;
+        top: 15px;
+        left: 18px;
+        z-index: 2;
+        color: rgba(214, 173, 112, 0.78);
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .study-hotspot {
+        position: absolute;
+        z-index: 3;
+        display: grid;
+        min-width: 86px;
+        transform: translate(-50%, -50%);
+        padding: 8px 9px;
+        border: 1px solid rgba(214, 173, 112, 0.6);
+        border-radius: 10px;
+        background: rgba(16, 17, 18, 0.86);
+        color: #f3e5ce;
+        cursor: pointer;
+        font: inherit;
+        text-align: center;
+        transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
+      }
+
+      .study-hotspot:hover,
+      .study-hotspot:focus-visible {
+        transform: translate(-50%, -50%) scale(1.08);
+        border-color: #f0c982;
+        background: rgba(79, 51, 35, 0.94);
+      }
+
+      .study-hotspot.is-found {
+        border-color: rgba(126, 210, 145, 0.55);
+        background: rgba(26, 64, 42, 0.84);
+        color: #a8d9b1;
+        cursor: default;
+        opacity: 0.72;
+      }
+
+      .study-hotspot-icon {
+        font-size: clamp(1.35rem, 4vw, 2.1rem);
+        line-height: 1.1;
+      }
+
+      .study-hotspot-label {
+        margin-top: 4px;
+        font-size: 0.68rem;
+        line-height: 1.2;
+      }
+
       .action-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -1776,6 +1870,6 @@
       </div>
     </dialog>
 
-    <script src="/game.js?v=17" defer></script>
+    <script src="/game.js?v=18" defer></script>
   </body>
 </html>

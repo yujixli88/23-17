@@ -133,6 +133,8 @@
             room: "Кабинет Виктора Ардена",
             inspectRoom: "Кабинет Виктора Ардена",
             inspectHint: "Выберите предметы, которые хотите изучить. Каждая находка попадёт в блокнот.",
+            roomMapLabel: "Интерактивная карта кабинета",
+            found: "Найдено",
             lockedRoom: "ЗАПЕРТЫЙ КАБИНЕТ · СНЕГ ЗА ОКНОМ",
             talkGuests: "Поговорить с гостями",
             guests: "Гости отеля",
@@ -325,6 +327,8 @@
             room: "Victor Arden's study",
             inspectRoom: "Victor Arden's study",
             inspectHint: "Choose an object to examine. Every clue you find will be added to your journal.",
+            roomMapLabel: "Interactive study map",
+            found: "Found",
             lockedRoom: "LOCKED STUDY · SNOW OUTSIDE",
             talkGuests: "Speak with the guests",
             guests: "Hotel guests",
@@ -944,8 +948,38 @@
           }
         }
 
+        function renderStudyMap() {
+          const map = document.createElement("section");
+          map.className = "study-map";
+          map.setAttribute("aria-label", t().roomMapLabel);
+          text(map, "div", t().lockedRoom, "study-map-caption");
+
+          (state.game.scene_objects || []).forEach((object) => {
+            const area = t().areas[object.clue_index];
+            const hotspot = document.createElement("button");
+            hotspot.type = "button";
+            hotspot.className = "study-hotspot";
+            hotspot.dataset.action = "inspect";
+            hotspot.dataset.value = object.clue_index;
+            hotspot.style.left = `${object.left}%`;
+            hotspot.style.top = `${object.top}%`;
+            hotspot.disabled = state.clues.has(object.clue_index);
+            hotspot.classList.toggle("is-found", hotspot.disabled);
+            hotspot.setAttribute(
+              "aria-label",
+              `${area.title} — ${hotspot.disabled ? t().found : t().examine}`
+            );
+            text(hotspot, "span", object.icon, "study-hotspot-icon");
+            text(hotspot, "span", area.title, "study-hotspot-label");
+            map.append(hotspot);
+          });
+
+          screen.append(map);
+        }
+
         function showScene() {
           setScreen(t().room, t().inspectRoom, "");
+          renderStudyMap();
           const sceneChoices = t().areas
             .map((area, index) => ({
               label: `${t().examine}: ${area.title}`,
