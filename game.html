@@ -495,9 +495,19 @@
       }
 
       .game-logo {
+        display: inline-block;
         color: var(--gold);
         font-weight: 700;
         letter-spacing: 0.04em;
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      .game-logo:hover,
+      .game-logo:focus-visible {
+        color: #f0d49f;
+        text-decoration: underline;
+        text-underline-offset: 4px;
       }
 
       .game-status {
@@ -1007,6 +1017,270 @@
 
       .game-list-item strong {
         color: var(--gold);
+      }
+
+      .vocab-game-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        margin-top: 18px;
+      }
+
+      .vocab-game-card {
+        position: relative;
+        display: flex;
+        min-height: 280px;
+        flex-direction: column;
+        overflow: hidden;
+        padding: 20px;
+        border: 1px solid rgba(214, 173, 112, 0.3);
+        border-radius: 14px;
+        background: linear-gradient(145deg, rgba(74, 48, 39, 0.92), rgba(23, 25, 29, 0.96));
+        box-shadow: 0 14px 28px rgba(0, 0, 0, 0.2);
+        transition: transform 180ms ease, border-color 180ms ease;
+      }
+
+      .vocab-game-card::after {
+        position: absolute;
+        right: -30px;
+        bottom: -40px;
+        width: 140px;
+        height: 140px;
+        border-radius: 50%;
+        background: rgba(214, 173, 112, 0.12);
+        content: "";
+      }
+
+      .vocab-game-card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(240, 212, 159, 0.72);
+      }
+
+      .vocab-game-card-2 {
+        background: linear-gradient(145deg, rgba(35, 62, 68, 0.95), rgba(20, 27, 31, 0.96));
+      }
+
+      .vocab-game-card-3 {
+        background: linear-gradient(145deg, rgba(49, 42, 72, 0.95), rgba(21, 23, 31, 0.96));
+      }
+
+      .vocab-card-icon {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        width: 58px;
+        height: 58px;
+        place-items: center;
+        margin-bottom: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 16px;
+        background: rgba(0, 0, 0, 0.2);
+        font-size: 2rem;
+      }
+
+      .vocab-game-card > div:nth-child(2) {
+        position: relative;
+        z-index: 1;
+        flex: 1;
+      }
+
+      .vocab-card-kicker,
+      .vocab-exercise-number {
+        color: var(--gold);
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+      }
+
+      .vocab-game-card h3,
+      .vocab-exercise-card h3 {
+        margin: 8px 0;
+        color: #f3e5ce;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 1.25rem;
+      }
+
+      .vocab-card-description {
+        color: #d3c9bf;
+        line-height: 1.55;
+      }
+
+      .vocab-card-meta {
+        color: #a99b8d;
+        font-size: 0.76rem;
+      }
+
+      .vocab-game-card .start-button {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        margin-top: 16px;
+      }
+
+      .vocab-exercise-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 18px;
+      }
+
+      .vocab-exercise-card {
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 11px;
+        background: rgba(255, 255, 255, 0.035);
+      }
+
+      .vocab-exercise-card details {
+        margin-top: 12px;
+        border-top: 1px solid var(--line);
+        padding-top: 10px;
+      }
+
+      .vocab-answer-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 22px;
+      }
+
+      .vocab-quiz-hero {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin: 20px 0 14px;
+        padding: 14px 16px;
+        border: 1px solid rgba(214, 173, 112, 0.26);
+        border-radius: 12px;
+        background: linear-gradient(90deg, rgba(214, 173, 112, 0.13), rgba(255, 255, 255, 0.035));
+      }
+
+      .vocab-quiz-icon {
+        display: grid;
+        width: 52px;
+        height: 52px;
+        flex: 0 0 auto;
+        place-items: center;
+        border-radius: 15px;
+        background: rgba(0, 0, 0, 0.23);
+        font-size: 1.8rem;
+      }
+
+      .vocab-progress {
+        height: 8px;
+        flex: 1;
+        overflow: hidden;
+        border-radius: 99px;
+        background: rgba(255, 255, 255, 0.12);
+      }
+
+      .vocab-progress span {
+        display: block;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #c58d54, #f0d49f);
+        transition: width 240ms ease;
+      }
+
+      .vocab-progress-label {
+        color: var(--gold);
+        font-size: 0.78rem;
+        white-space: nowrap;
+      }
+
+      .vocab-question-card {
+        position: relative;
+        overflow: hidden;
+        margin: 14px 0;
+        padding: clamp(22px, 4vw, 38px);
+        border: 1px solid rgba(214, 173, 112, 0.32);
+        border-radius: 16px;
+        background:
+          radial-gradient(circle at 90% 15%, rgba(214, 173, 112, 0.16), transparent 30%),
+          linear-gradient(145deg, rgba(49, 42, 37, 0.94), rgba(20, 22, 25, 0.97));
+        box-shadow: 0 18px 34px rgba(0, 0, 0, 0.2);
+      }
+
+      .vocab-question-card::after {
+        position: absolute;
+        right: 28px;
+        bottom: -34px;
+        width: 90px;
+        height: 90px;
+        border: 1px solid rgba(214, 173, 112, 0.22);
+        border-radius: 50%;
+        content: "?";
+        color: rgba(214, 173, 112, 0.3);
+        font: 700 4rem/1 Georgia, serif;
+        text-align: center;
+      }
+
+      .vocab-question-text {
+        position: relative;
+        z-index: 1;
+        max-width: 760px;
+        margin: 14px 0 0;
+        color: #f1e5d6;
+        font: clamp(1.2rem, 2.5vw, 1.75rem)/1.45 Georgia, "Times New Roman", serif;
+      }
+
+      .vocab-result-panel {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin: 20px 0;
+        padding: 18px;
+        border: 1px solid rgba(115, 197, 138, 0.4);
+        border-radius: 14px;
+        background: rgba(62, 143, 81, 0.14);
+      }
+
+      .vocab-score-badge {
+        display: grid;
+        width: 74px;
+        height: 74px;
+        flex: 0 0 auto;
+        place-items: center;
+        border: 2px solid #73c58a;
+        border-radius: 50%;
+        color: #a8d9b1;
+        font-weight: 700;
+      }
+
+      .vocab-answer-card {
+        position: relative;
+        min-height: 72px;
+        padding: 18px 16px 14px;
+        border: 1px solid rgba(214, 173, 112, 0.28);
+        border-radius: 11px;
+        background: rgba(255, 255, 255, 0.045);
+        color: #eee6da;
+        text-align: left;
+      }
+
+      .vocab-answer-card::before {
+        position: absolute;
+        top: 8px;
+        right: 12px;
+        color: var(--gold);
+        content: attr(data-option);
+        font-size: 0.72rem;
+        font-weight: 700;
+      }
+
+      .vocab-answer-card:hover:not(:disabled) {
+        border-color: rgba(240, 212, 159, 0.72);
+        background: rgba(214, 173, 112, 0.14);
+      }
+
+      .vocab-answer-card.correct {
+        border-color: #73c58a;
+        background: rgba(62, 143, 81, 0.3);
+      }
+
+      .vocab-answer-card.wrong {
+        border-color: #bd6559;
+        background: rgba(189, 101, 89, 0.25);
       }
 
       .game-result {
@@ -1640,6 +1914,15 @@
           gap: 10px;
         }
 
+        .vocab-game-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .vocab-exercise-grid,
+        .vocab-answer-grid {
+          grid-template-columns: 1fr;
+        }
+
         .account-panel {
           padding: 14px;
         }
@@ -1783,7 +2066,7 @@
           </div>
         </header>
         <div class="game-topbar">
-          <div class="game-logo" id="game-logo">🕰 Последний звонок</div>
+          <a class="game-logo" id="game-logo" href="/" aria-label="Вернуться на главную страницу">🕰 Последний звонок</a>
           <div class="game-status" id="game-status">Дело не начато</div>
         </div>
         <div class="game-body">

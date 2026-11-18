@@ -821,6 +821,22 @@
           let questionIndex = 0;
           let score = 0;
 
+          function shuffledOptions(question) {
+            const answer = question.answer;
+            const incorrect = question.options.filter((option) => option !== answer);
+
+            for (let index = incorrect.length - 1; index > 0; index -= 1) {
+              const swapIndex = Math.floor(Math.random() * (index + 1));
+              [incorrect[index], incorrect[swapIndex]] = [incorrect[swapIndex], incorrect[index]];
+            }
+
+            // Move the correct answer through the grid: B, C, D, A, ...
+            // This prevents every question from having the answer in the first cell.
+            const correctIndex = (questionIndex + 1) % question.options.length;
+            incorrect.splice(correctIndex, 0, answer);
+            return incorrect;
+          }
+
           function renderQuestion() {
             const question = game.questions[questionIndex];
             setScreen(
@@ -828,12 +844,30 @@
               `Question ${questionIndex + 1} / ${game.questions.length}`,
               `Score: ${score} · ${game.description}`
             );
-            text(screen, "p", question.prompt, "scene-copy");
+            const quizHero = document.createElement("div");
+            quizHero.className = "vocab-quiz-hero";
+            text(quizHero, "span", game.id === "crime-quiz" ? "🕵️" : game.id === "word-detective" ? "🔎" : "🧩", "vocab-quiz-icon");
+            const progress = document.createElement("div");
+            progress.className = "vocab-progress";
+            const progressBar = document.createElement("span");
+            progressBar.style.width = `${((questionIndex + 1) / game.questions.length) * 100}%`;
+            progress.append(progressBar);
+            quizHero.append(progress);
+            text(quizHero, "strong", `${questionIndex + 1} / ${game.questions.length}`, "vocab-progress-label");
+            screen.append(quizHero);
+
+            const questionCard = document.createElement("section");
+            questionCard.className = "vocab-question-card";
+            text(questionCard, "span", "CASE FILE · QUESTION", "vocab-card-kicker");
+            text(questionCard, "p", question.prompt, "vocab-question-text");
+            screen.append(questionCard);
 
             const choices = document.createElement("div");
-            choices.className = "action-grid";
-            question.options.forEach((option) => {
+            choices.className = "vocab-answer-grid";
+            shuffledOptions(question).forEach((option, optionIndex) => {
               const choice = button(choices, option, "vocabulary-choice");
+              choice.className = "vocab-answer-card";
+              choice.dataset.option = String.fromCharCode(65 + optionIndex);
               choice.addEventListener("click", () => {
                 choices.querySelectorAll("button").forEach((item) => {
                   item.disabled = true;
@@ -872,6 +906,11 @@
           const total = game.questions.length;
           const percentage = Math.round((score / total) * 100);
           setScreen(game.title, "Game complete!", `Your score: ${score} / ${total} (${percentage}%).`);
+          const resultPanel = document.createElement("div");
+          resultPanel.className = "vocab-result-panel";
+          text(resultPanel, "div", `${percentage}%`, "vocab-score-badge");
+          text(resultPanel, "p", `${score} / ${total} correct answers`, "vocab-card-meta");
+          screen.append(resultPanel);
           text(
             screen,
             "p",
@@ -894,13 +933,22 @@
 
           text(screen, "h3", "Mini-games", "section-title");
           const games = document.createElement("div");
-          games.className = "game-list";
-          result.games.forEach((game) => {
+          games.className = "vocab-game-grid";
+          const gameIcons = {
+            "crime-quiz": "🕵️",
+            "word-detective": "🔎",
+            "mini-mystery": "🧩",
+          };
+          result.games.forEach((game, gameIndex) => {
             const card = document.createElement("article");
-            card.className = "game-list-item";
-            text(card, "h3", game.title);
-            text(card, "p", game.description);
-            text(card, "p", `${game.questions.length} questions · 1 point for each correct answer`, "scene-copy");
+            card.className = `vocab-game-card vocab-game-card-${gameIndex + 1}`;
+            text(card, "div", gameIcons[game.id] || "📚", "vocab-card-icon");
+            const cardBody = document.createElement("div");
+            text(cardBody, "span", `CASE ${String(gameIndex + 1).padStart(2, "0")}`, "vocab-card-kicker");
+            text(cardBody, "h3", game.title);
+            text(cardBody, "p", game.description, "vocab-card-description");
+            text(cardBody, "p", `${game.questions.length} questions · 1 point for each correct answer`, "vocab-card-meta");
+            card.append(cardBody);
             const start = button(card, "Start game", "vocabulary-start");
             start.className = "start-button";
             start.addEventListener("click", () => renderVocabularyGame(game));
@@ -910,12 +958,13 @@
 
           text(screen, "h3", "Practice exercises", "section-title");
           const list = document.createElement("div");
-          list.className = "game-list";
-          result.exercises.forEach((exercise) => {
+          list.className = "vocab-exercise-grid";
+          result.exercises.forEach((exercise, exerciseIndex) => {
             const card = document.createElement("article");
-            card.className = "game-list-item";
+            card.className = "vocab-exercise-card";
+            text(card, "span", String(exerciseIndex + 1).padStart(2, "0"), "vocab-exercise-number");
             text(card, "h3", exercise.title);
-            text(card, "p", exercise.instruction);
+            text(card, "p", exercise.instruction, "vocab-card-description");
             (exercise.items || []).forEach((item) => text(card, "p", item));
             (exercise.options || []).forEach((option) => text(card, "p", option));
 
