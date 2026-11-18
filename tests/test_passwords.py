@@ -1,152 +1,167 @@
+import os
+import sqlite3
+import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
-from pydantic import ValidationError
+_bootstrap = tempfile.TemporaryDirectory()
+_previous_database_path = os.environ.get("GAME_DATABASE_PATH")
+os.environ["GAME_DATABASE_PATH"] = str(Path(_bootstrap.name) / "bootstrap.sqlite3")
 
+import auth
 import database
-from password_utils import hash_password, verify_password
-from schemas import UserCreate, UserLogin
+from password_utils import hash_password
 
-with patch.object(database.Base.metadata, "create_all"):
-  import main
+if _previous_database_path is None:
+    os.environ.pop("GAME_DATABASE_PATH", None)
+else:
+    os.environ["GAME_DATABASE_PATH"] = _previous_database_path
 
 
-class PasswordValidationTests(unittest.TestCase):
-  def test_accepts_password_meeting_all_requirements(self):
-    user = UserCreate(email="player@example.com", password="ЧудесныйПароль42!")
-    self.assertEqual(user.password, "ЧудесныйПароль42!")
+class AuthDatabaseTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary_directory = tempfile.TemporaryDirectory()
+        self.database_path = Path(self.temporary_directory.name) / "game.sqlite3"
+        self.database_patch = patch.object(auth, "DATABASE_PATH", self.database_path)
+        self.database_patch.start()
+        auth.initialize_database()
 
-  def test_accepts_password_longer_than_72_utf8_bytes(self):
-    password = "ЧудесныйПароль42!" * 5
+    def tearDown(self):
+        self.database_patch.stop()
+        self.temporary_directory.cleanup()
 
-    self.assertGreater(len(password.encode("utf-8")), 72)
-    self.assertEqual(
-        UserCreate(email="player@example.com", password=password).password,
-        password,
-    )
+    def test_registration_hashes_password_and_authenticates_email_or_username(self):
+        password = "DetectivePassword42!"
+        user = auth.create_user(
+            "detective_17", "PLAYER@example.com", password, "B2"
+        )
 
-  def test_rejects_password_missing_each_required_criterion(self):
-    invalid_passwords = (
-        "Ab1!short",
-        "lowercase123!",
-        "UPPERCASE123!",
-        "NoDigitsHere!",
-        "NoSpecialChar123",
-        "Aa1!\ud800valid",
-    )
-    for password in invalid_passwords:
-      with self.subTest(password=password):
-        with self.assertRaises(ValidationError):
-          UserCreate(email="player@example.com", password=password)
+        self.assertEqual(user["email"], "player@example.com")
+        self.assertEqual(user["username"], "detective_17")
+        self.assertEqual(
+            auth.authenticate_user("PLAYER@example.com", password)["id"],
+            user["id"],
+        )
+        self.assertEqual(
+            auth.authenticate_user("detective_17", password)["id"],
+            user["id"],
+        )
+        self.assertIsNone(auth.authenticate_user("detective_17", "wrong-password"))
 
-  def test_hash_is_salted_and_verifiable(self):
-    password = "ЧудесныйПароль42!"
-    first_hash = hash_password(password)
-    second_hash = hash_password(password)
+        with database.connect(self.database_path) as connection:
+            row = connection.execute(
+                "SELECT password_salt, password_hash, hashed_password FROM users"
+            ).fetchone()
+        self.assertTrue(row["password_salt"])
+        self.assertTrue(row["password_hash"])
+        self.assertEqual(row["hashed_password"], "")
+        self.assertNotIn(password, row["password_hash"])
 
-    self.assertNotEqual(first_hash, second_hash)
-    self.assertTrue(verify_password(password, first_hash))
-    self.assertFalse(verify_password("another-password", first_hash))
-    self.assertFalse(verify_password(password, "invalid-hash"))
+    def test_legacy_account_keeps_profile_and_upgrades_password_hash_on_login(self):
+        legacy_path = Path(self.temporary_directory.name) / "legacy.sqlite3"
+        legacy_password = "LegacyDetective42!"
+        with sqlite3.connect(legacy_path) as connection:
+            connection.executescript(
+                """
+                CREATE TABLE users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    email TEXT NOT NULL UNIQUE,
+                    hashed_password TEXT NOT NULL,
+                    glitters INTEGER NOT NULL DEFAULT 0,
+                    rank_level TEXT NOT NULL
+                );
+                CREATE TABLE user_profiles (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL UNIQUE REFERENCES users(id),
+                    display_name TEXT NOT NULL,
+                    date_of_birth TEXT,
+                    phone TEXT,
+                    avatar_data TEXT
+                );
+                """
+            )
+            connection.execute(
+                """
+                INSERT INTO users (email, hashed_password, glitters, rank_level)
+                VALUES (?, ?, ?, ?)
+                """,
+                (
+                    "legacy@example.com",
+                    hash_password(legacy_password),
+                    17,
+                    "Gold",
+                ),
+            )
+            connection.execute(
+                """
+                INSERT INTO user_profiles (user_id, display_name, phone)
+                VALUES (1, 'Old Detective', '+1 555 123 4567')
+                """
+            )
+        connection.close()
 
-  def test_registration_stores_only_the_password_hash(self):
-    class FakeQuery:
-      def filter(self, _condition):
-        return self
+        with patch.object(auth, "DATABASE_PATH", legacy_path):
+            auth.initialize_database()
+            migrated_user = auth.authenticate_user(
+                "legacy@example.com", legacy_password
+            )
+            self.assertEqual(migrated_user["display_name"], "Old Detective")
+            self.assertEqual(migrated_user["phone"], "+1 555 123 4567")
+            self.assertEqual(migrated_user["username"], "OldDetective")
 
-      def first(self):
-        return None
+            with database.connect(legacy_path) as connection:
+                row = connection.execute(
+                    """
+                    SELECT password_salt, password_hash, hashed_password,
+                           glitters, rank_level
+                    FROM users WHERE id = 1
+                    """
+                ).fetchone()
+                progress = connection.execute(
+                    "SELECT stage, clues_json FROM game_progress WHERE user_id = 1"
+                ).fetchone()
+            self.assertTrue(row["password_salt"])
+            self.assertTrue(row["password_hash"])
+            self.assertEqual(row["hashed_password"], "")
+            self.assertEqual(row["glitters"], 17)
+            self.assertEqual(row["rank_level"], "Gold")
+            self.assertEqual(progress["stage"], 0)
+            self.assertEqual(progress["clues_json"], "[]")
 
-    class FakeDatabase:
-      added_user = None
+            created_user = auth.create_user(
+                "new_player",
+                "new@example.com",
+                "AnotherPassword42!",
+            )
+            self.assertEqual(created_user["username"], "new_player")
+            with database.connect(legacy_path) as connection:
+                new_row = connection.execute(
+                    """
+                    SELECT hashed_password, glitters, rank_level
+                    FROM users WHERE id = ?
+                    """,
+                    (created_user["id"],),
+                ).fetchone()
+            self.assertEqual(new_row["hashed_password"], "")
+            self.assertEqual(new_row["glitters"], 0)
+            self.assertEqual(new_row["rank_level"], "Базовый уровень")
 
-      def query(self, _model):
-        return FakeQuery()
-
-      def add(self, user):
-        self.added_user = user
-
-      def commit(self):
-        pass
-
-      def refresh(self, user):
-        user.id = 1
-
-    db = FakeDatabase()
-    password = "ЧудесныйПароль42!"
-    main.register_user(
-        UserCreate(email="player@example.com", password=password),
-        db=db,
-    )
-
-    self.assertNotEqual(db.added_user.hashed_password, password)
-    self.assertTrue(verify_password(password, db.added_user.hashed_password))
-
-  def test_login_returns_registered_user_with_valid_password(self):
-    password = "ЧудесныйПароль42!"
-    registered_user = main.models.User(
-        id=1,
-        email="player@example.com",
-        hashed_password=hash_password(password),
-        glitters=0,
-        rank_level="Базовый уровень",
-    )
-
-    class FakeQuery:
-      def filter(self, _condition):
-        return self
-
-      def first(self):
-        return registered_user
-
-    class FakeDatabase:
-      def query(self, _model):
-        return FakeQuery()
-
-    result = main.login_user(
-        UserLogin(email="player@example.com", password=password),
-        db=FakeDatabase(),
-    )
-
-    self.assertIs(result, registered_user)
-
-  def test_login_rejects_wrong_password_and_unknown_email(self):
-    password = "ЧудесныйПароль42!"
-    registered_user = main.models.User(
-        id=1,
-        email="player@example.com",
-        hashed_password=hash_password(password),
-    )
-
-    class FakeQuery:
-      def __init__(self, user):
-        self.user = user
-
-      def filter(self, _condition):
-        return self
-
-      def first(self):
-        return self.user
-
-    class FakeDatabase:
-      def __init__(self, user):
-        self.user = user
-
-      def query(self, _model):
-        return FakeQuery(self.user)
-
-    invalid_credentials = (
-        (UserLogin(email="player@example.com", password="WrongPassword1!"),
-         FakeDatabase(registered_user)),
-        (UserLogin(email="missing@example.com", password=password),
-         FakeDatabase(None)),
-    )
-    for credentials, db in invalid_credentials:
-      with self.subTest(email=credentials.email):
-        with self.assertRaises(main.HTTPException) as error:
-          main.login_user(credentials, db=db)
-        self.assertEqual(error.exception.status_code, 401)
+            with database.connect(legacy_path) as connection:
+                connection.execute(
+                    "UPDATE game_progress SET stage = 1 WHERE user_id = 1"
+                )
+            auth.initialize_database()
+            with database.connect(legacy_path) as connection:
+                profile_count = connection.execute(
+                    "SELECT COUNT(*) FROM user_profiles WHERE user_id = 1"
+                ).fetchone()[0]
+                saved_stage = connection.execute(
+                    "SELECT stage FROM game_progress WHERE user_id = 1"
+                ).fetchone()[0]
+            self.assertEqual(profile_count, 1)
+            self.assertEqual(saved_stage, 1)
 
 
 if __name__ == "__main__":
-  unittest.main()
+    unittest.main()

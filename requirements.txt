@@ -1,4 +1,3 @@
 fastapi
 uvicorn[standard]
-sqlalchemy
-jinja2
+PySide6

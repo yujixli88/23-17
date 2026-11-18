@@ -1,130 +1,113 @@
 import base64
+import os
+import tempfile
 import unittest
-from datetime import date
+from datetime import date, timedelta
+from pathlib import Path
 from unittest.mock import patch
 
-from pydantic import ValidationError
+from fastapi import HTTPException
+from starlette.requests import Request
 
-import database
-from password_utils import hash_password
-from schemas import ProfileUpdate
+_bootstrap = tempfile.TemporaryDirectory()
+_previous_database_path = os.environ.get("GAME_DATABASE_PATH")
+os.environ["GAME_DATABASE_PATH"] = str(Path(_bootstrap.name) / "bootstrap.sqlite3")
 
-with patch.object(database.Base.metadata, "create_all"):
-  import main
+import auth
+import main
+
+if _previous_database_path is None:
+    os.environ.pop("GAME_DATABASE_PATH", None)
+else:
+    os.environ["GAME_DATABASE_PATH"] = _previous_database_path
 
 
-class ProfileValidationTests(unittest.TestCase):
-  def test_normalizes_display_name_and_empty_phone(self):
-    profile = ProfileUpdate(
-        email="player@example.com",
-        password="password",
-        display_name="  Detective  ",
-        phone=" ",
+def make_request(csrf_token="test-csrf-token"):
+    return Request(
+        {
+            "type": "http",
+            "asgi": {"version": "3.0"},
+            "http_version": "1.1",
+            "method": "POST",
+            "scheme": "http",
+            "path": "/api/auth/profile",
+            "raw_path": b"/api/auth/profile",
+            "query_string": b"",
+            "headers": [(b"x-csrf-token", csrf_token.encode("ascii"))],
+            "client": ("127.0.0.1", 1234),
+            "server": ("testserver", 80),
+        }
     )
 
-    self.assertEqual(profile.display_name, "Detective")
-    self.assertIsNone(profile.phone)
 
-  def test_rejects_future_birth_date_and_invalid_phone(self):
-    invalid_profiles = (
-        {"date_of_birth": date(2100, 1, 1)},
-        {"phone": "not-a-phone"},
-    )
-    for fields in invalid_profiles:
-      with self.subTest(fields=fields):
-        with self.assertRaises(ValidationError):
-          ProfileUpdate(
-              email="player@example.com",
-              password="password",
-              display_name="Detective",
-              **fields,
-          )
+class ProfileApiTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary_directory = tempfile.TemporaryDirectory()
+        self.database_path = Path(self.temporary_directory.name) / "game.sqlite3"
+        self.database_patch = patch.object(auth, "DATABASE_PATH", self.database_path)
+        self.database_patch.start()
+        auth.initialize_database()
+        self.user = auth.create_user(
+            "profile_player", "profile@example.com", "ProfilePassword42!"
+        )
+        _cookie, self.csrf_token = auth.create_session(self.user["id"])
+        self.session = {
+            "user": self.user,
+            "csrf_token": self.csrf_token,
+        }
 
-  def test_accepts_png_avatar_and_rejects_non_image_data(self):
-    png_header = b"\x89PNG\r\n\x1a\n"
-    valid_avatar = base64.b64encode(png_header).decode("ascii")
-    profile = ProfileUpdate(
-        email="player@example.com",
-        password="password",
-        display_name="Detective",
-        avatar_data=valid_avatar,
-    )
-    self.assertEqual(profile.avatar_data, valid_avatar)
+    def tearDown(self):
+        self.database_patch.stop()
+        self.temporary_directory.cleanup()
 
-    with self.assertRaises(ValidationError):
-      ProfileUpdate(
-          email="player@example.com",
-          password="password",
-          display_name="Detective",
-          avatar_data=base64.b64encode(b"not an image").decode("ascii"),
-      )
+    def test_profile_update_requires_csrf_and_persists_private_fields_and_avatar(self):
+        avatar = base64.b64encode(b"\x89PNG\r\n\x1a\n").decode("ascii")
+        payload = main.ProfilePayload(
+            display_name="  Detective  ",
+            date_of_birth="2000-01-02",
+            phone="+1 555 123 4567",
+            avatar_data=f"data:image/png;base64,{avatar}",
+        )
 
-  def test_rejects_oversized_avatar_before_decoding(self):
-    with self.assertRaises(ValidationError):
-      ProfileUpdate(
-          email="player@example.com",
-          password="password",
-          display_name="Detective",
-          avatar_data="A" * 1_398_105,
-      )
+        with self.assertRaises(HTTPException) as csrf_error:
+            main.save_profile(
+                payload, make_request("wrong-token"), self.session
+            )
+        self.assertEqual(csrf_error.exception.status_code, 403)
 
+        result = main.save_profile(
+            payload, make_request(self.csrf_token), self.session
+        )
+        self.assertEqual(result["display_name"], "Detective")
+        self.assertEqual(result["date_of_birth"], "2000-01-02")
+        self.assertEqual(result["phone"], "+1 555 123 4567")
+        self.assertEqual(result["avatar_data"], avatar)
+        self.assertEqual(result["avatar_mime_type"], "image/png")
 
-class ProfileUpdateTests(unittest.TestCase):
-  def test_profile_update_requires_valid_password_and_saves_private_fields(self):
-    password = "Password123!"
-    user = main.models.User(
-        id=1,
-        email="player@example.com",
-        hashed_password=hash_password(password),
-        glitters=0,
-        rank_level="Базовый уровень",
-    )
+    def test_profile_update_rejects_future_birth_date_and_invalid_avatar(self):
+        future_date = (date.today() + timedelta(days=1)).isoformat()
+        with self.assertRaises(HTTPException) as date_error:
+            main.save_profile(
+                main.ProfilePayload(
+                    display_name="Detective",
+                    date_of_birth=future_date,
+                ),
+                make_request(self.csrf_token),
+                self.session,
+            )
+        self.assertEqual(date_error.exception.status_code, 422)
 
-    class FakeQuery:
-      def filter(self, _condition):
-        return self
-
-      def first(self):
-        return user
-
-    class FakeDatabase:
-      added_profile = None
-
-      def query(self, _model):
-        return FakeQuery()
-
-      def add(self, profile):
-        self.added_profile = profile
-
-      def commit(self):
-        pass
-
-      def refresh(self, _instance):
-        pass
-
-    db = FakeDatabase()
-    request = ProfileUpdate(
-        email="player@example.com",
-        password=password,
-        display_name="Detective",
-        date_of_birth=date(2000, 1, 1),
-        phone="+1 555 123 4567",
-    )
-    result = main.update_profile(request, db=db)
-
-    self.assertIs(result, user)
-    self.assertEqual(user.profile.display_name, "Detective")
-    self.assertEqual(user.profile.date_of_birth, date(2000, 1, 1))
-    self.assertEqual(user.profile.phone, "+1 555 123 4567")
-    self.assertIs(db.added_profile, user.profile)
-    response = main.schemas.UserResponse.model_validate(user)
-    self.assertEqual(response.profile.display_name, "Detective")
-
-    request.password = "WrongPassword!"
-    with self.assertRaises(main.HTTPException) as error:
-      main.update_profile(request, db=db)
-    self.assertEqual(error.exception.status_code, 401)
+        with self.assertRaises(HTTPException) as avatar_error:
+            main.save_profile(
+                main.ProfilePayload(
+                    display_name="Detective",
+                    avatar_data="data:image/png;base64,bm90IGFuIGltYWdl",
+                ),
+                make_request(self.csrf_token),
+                self.session,
+            )
+        self.assertEqual(avatar_error.exception.status_code, 422)
 
 
 if __name__ == "__main__":
-  unittest.main()
+    unittest.main()
