@@ -40,7 +40,8 @@ async function submitRegistration(event) {
                 'Регистрация успешна! Добро пожаловать.',
                 'Registration successful! Welcome.'
             );
-            startGame();
+            closeRegisterModal();
+            window.openProfileSetup({ email, password });
         } else {
             const data = await response.json();
             if (Array.isArray(data.detail)) {

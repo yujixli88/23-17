@@ -1,3 +1,4 @@
+import base64
 from database import Base, engine, get_db
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
@@ -76,4 +77,46 @@ def login_user(user: schemas.UserLogin, db: Session = Depends(get_db)):
         status_code=401, detail="Invalid email or password"
     )
 
+  return db_user
+
+
+@app.put("/api/profile", response_model=schemas.UserResponse)
+def update_profile(
+    profile: schemas.ProfileUpdate,
+    db: Session = Depends(get_db),
+):
+  db_user = (
+      db.query(models.User)
+      .filter(models.User.email == profile.email)
+      .first()
+  )
+  if db_user is None or not verify_password(
+      profile.password, db_user.hashed_password
+  ):
+    raise HTTPException(status_code=401, detail="Invalid email or password")
+
+  db_profile = db_user.profile
+  if db_profile is None:
+    db_profile = models.UserProfile(user_id=db_user.id)
+    db_user.profile = db_profile
+    db.add(db_profile)
+
+  db_profile.display_name = profile.display_name
+  db_profile.date_of_birth = profile.date_of_birth
+  db_profile.phone = profile.phone
+  if profile.remove_avatar:
+    db_profile.avatar_data = None
+    db_profile.avatar_mime_type = None
+  elif profile.avatar_data is not None:
+    image = base64.b64decode(profile.avatar_data, validate=True)
+    if image.startswith(b"\x89PNG\r\n\x1a\n"):
+      db_profile.avatar_mime_type = "image/png"
+    elif image.startswith(b"\xff\xd8\xff"):
+      db_profile.avatar_mime_type = "image/jpeg"
+    else:
+      db_profile.avatar_mime_type = "image/webp"
+    db_profile.avatar_data = profile.avatar_data
+
+  db.commit()
+  db.refresh(db_user)
   return db_user

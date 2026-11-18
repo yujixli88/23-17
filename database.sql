@@ -10,3 +10,13 @@ CREATE TABLE IF NOT EXISTS users (
     rank_level VARCHAR(50) DEFAULT 'Базовый уровень',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS user_profiles (
+    user_id INT PRIMARY KEY,
+    display_name VARCHAR(32) NOT NULL,
+    date_of_birth DATE,
+    phone VARCHAR(32),
+    avatar_data MEDIUMTEXT,
+    avatar_mime_type VARCHAR(16),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);

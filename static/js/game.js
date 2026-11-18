@@ -6,9 +6,7 @@ window.onload = function() {
     const savedUser = localStorage.getItem('user');
     if (savedUser) {
         const user = JSON.parse(savedUser);
-        document.getElementById('profile-status').innerText = user.email;
-        document.getElementById('rank-display').innerText = user.rank_level;
-        document.getElementById('glitters-display').innerText = user.glitters;
+        window.renderUserProfile(user);
         glitters = user.glitters;
     }
 }
@@ -217,7 +215,6 @@ function claimAchievement(id, amount) {
     document.getElementById(`btn-claim-${id}`).remove();
 
     glitters += amount;
-    document.getElementById('glitters-display').innerText = glitters;
 }
 
 function goToMenu() {

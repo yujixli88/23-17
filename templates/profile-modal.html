@@ -1,0 +1,84 @@
+<div class="modal" id="profile-modal">
+    <section class="modal-content profile-modal-content"
+             aria-labelledby="profile-modal-title">
+        <h3 id="profile-modal-title"
+            data-ru="Настройка профиля" data-en="Set up your profile">
+            Настройка профиля
+        </h3>
+        <p class="profile-privacy-note"
+           data-ru="Имя показывается в игре. Дата рождения и телефон необязательны и видны только вам."
+           data-en="Your display name appears in the game. Your date of birth and phone are optional and private.">
+            Имя показывается в игре. Дата рождения и телефон необязательны и видны только вам.
+        </p>
+        <form class="profile-form">
+            <div class="profile-avatar-preview" aria-hidden="true">
+                <img class="avatar-preview-image" alt="" hidden>
+                <span class="avatar-preview-placeholder">👤</span>
+            </div>
+
+            <div class="profile-form-field">
+                <label for="profile-display-name"
+                       data-ru="Имя в игре" data-en="Display name">Имя в игре</label>
+                <input id="profile-display-name" name="display_name"
+                       type="text" maxlength="32"
+                       autocomplete="nickname" required
+                       data-ru-placeholder="Как вас называть в игре"
+                       data-en-placeholder="What should we call you in the game"
+                       placeholder="Как вас называть в игре">
+            </div>
+
+            <div class="profile-form-field">
+                <label for="profile-date-of-birth"
+                       data-ru="Дата рождения (необязательно)"
+                       data-en="Date of birth (optional)">Дата рождения (необязательно)</label>
+                <input id="profile-date-of-birth" name="date_of_birth"
+                       type="date" autocomplete="bday">
+            </div>
+
+            <div class="profile-form-field">
+                <label for="profile-phone"
+                       data-ru="Телефон (необязательно)"
+                       data-en="Phone number (optional)">Телефон (необязательно)</label>
+                <input id="profile-phone" name="phone" type="tel" autocomplete="tel"
+                       data-ru-placeholder="+7 900 000-00-00"
+                       data-en-placeholder="e.g. +1 555 123 4567"
+                       placeholder="+7 900 000-00-00">
+            </div>
+
+            <div class="profile-form-field">
+                <label for="profile-avatar-file"
+                       data-ru="Аватар (PNG, JPEG или WebP, до 1 МБ)"
+                       data-en="Avatar (PNG, JPEG, or WebP, up to 1 MB)">
+                    Аватар (PNG, JPEG или WebP, до 1 МБ)
+                </label>
+                <input id="profile-avatar-file" name="avatar" type="file"
+                       accept="image/png,image/jpeg,image/webp">
+            </div>
+
+            <label class="remove-avatar-option">
+                <input name="remove_avatar" type="checkbox">
+                <span data-ru="Удалить текущий аватар"
+                      data-en="Remove current avatar">Удалить текущий аватар</span>
+            </label>
+
+            <div class="profile-form-field profile-password-field">
+                <label for="profile-password"
+                       data-ru="Пароль для подтверждения изменений"
+                       data-en="Password to confirm changes">
+                    Пароль для подтверждения изменений
+                </label>
+                <input id="profile-password" name="password" type="password"
+                       autocomplete="current-password">
+            </div>
+
+            <p class="profile-message" role="status" aria-live="polite"></p>
+            <button type="submit" class="menu-btn-main"
+                    data-ru="Сохранить профиль" data-en="Save profile">
+                Сохранить профиль
+            </button>
+            <button type="button" class="menu-btn-main profile-cancel"
+                    onclick="closeProfileModal()"
+                    data-ru="Отмена" data-en="Cancel">Отмена</button>
+        </form>
+    </section>
+</div>

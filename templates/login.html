@@ -3,30 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Вход — Последний звонок в 23:17</title>
+    <title data-ru="Вход — Последний звонок в 23:17"
+           data-en="Sign In — The Last Bell at 23:17">Вход — Последний звонок в 23:17</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="/static/css/login.css">
 </head>
 <body>
     <main class="screen-container">
         <section class="login-card" aria-labelledby="login-title">
-            <h1 id="login-title" class="game-title">Вход</h1>
-            <p class="login-note">
+            <h1 id="login-title" class="game-title"
+                data-ru="Вход" data-en="Sign In">Вход</h1>
+            <p class="login-note"
+               data-ru="Войдите с почтой и паролем, указанными при регистрации."
+               data-en="Sign in with the email and password you used to register.">
                 Войдите с почтой и паролем, указанными при регистрации.
             </p>
             <form id="login-form">
-                <label for="login-email">Почта</label>
+                <label for="login-email" data-ru="Почта" data-en="Email">Почта</label>
                 <input id="login-email" name="email" type="email" autocomplete="email" required>
 
-                <label for="login-password">Пароль</label>
+                <label for="login-password" data-ru="Пароль" data-en="Password">Пароль</label>
                 <input id="login-password" name="password" type="password" autocomplete="current-password" required>
 
-                <button class="menu-btn-main" type="submit">Войти</button>
+                <button class="menu-btn-main" type="submit"
+                        data-ru="Войти" data-en="Log In">Войти</button>
                 <p id="login-message" class="login-message" role="status" aria-live="polite"></p>
             </form>
-            <a class="back-link" href="/">Вернуться в меню</a>
+            <a class="back-link" href="/"
+               data-ru="Вернуться в меню" data-en="Back to menu">Вернуться в меню</a>
         </section>
     </main>
     <script src="/static/js/login.js"></script>
+    <script src="/static/js/language.js"></script>
+    <audio id="background-music" src="/static/audio/gemini_music.mp3"
+           loop preload="auto"></audio>
+    <script src="/static/js/music.js"></script>
 </body>
 </html>

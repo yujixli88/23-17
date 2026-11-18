@@ -6,18 +6,14 @@ window.onload = function() {
     const savedUser = localStorage.getItem('user');
     if (savedUser) {
         const user = JSON.parse(savedUser);
-        document.getElementById('profile-status').innerText = user.email;
-        document.getElementById('rank-display').innerText = user.rank_level === "Базовый уровень"
-            ? "Basic level"
-            : user.rank_level;
-        document.getElementById('glitters-display').innerText = user.glitters;
+        window.renderUserProfile(user);
         glitters = user.glitters;
     }
 }
 
 const story = [
     { speaker: "voice", text: "️ The Last Chime at 11:17 PM" },
-    { speaker: "At 10:40 PM", text: "Arden announces:\n— Tomorrow morning, I’m going to make a few changes. And some of you are not going to like them one bit.\nEveryone takes his words as yet another act of manipulation." },
+    { speaker: "At 10:40 PM", text: "Arden announces:\n— Tomorrow morning, I’m going to-17\nEveryone takes his words as yet another act of manipulation." },
     { speaker: "At 11:05 PM", text: "️ Arden retires to his study. " },
     { speaker: "At 11:17 PM", text: "️The chime of an antique grandfather clock echoes throughout the hotel. " },
     { speaker: "At 11:17 PM", text: "Eleven strikes."},
@@ -229,7 +225,6 @@ const story = [
         document.getElementById(`btn-claim-${id}`).remove();
 
         glitters += amount;
-        document.getElementById('glitters-display').innerText = glitters;
     }
 
     function goToMenu() {
