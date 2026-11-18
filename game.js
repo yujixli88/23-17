@@ -928,6 +928,205 @@
           back.className = "quiet-button";
         }
 
+        function renderMatchingExercise(card, exercise) {
+          const questionSource = exercise.items.join(" ");
+          const optionSource = exercise.options.join(" ");
+          const questions = [...questionSource.matchAll(/(\d+)\.\s*([^\d]+?)(?=\s+\d+\.|$)/g)]
+            .map((match) => ({ number: match[1], text: match[2].trim() }));
+          const options = [...optionSource.matchAll(/([a-j])\)\s*(.*?)(?=\s+[a-j]\)|$)/gi)]
+            .map((match) => ({ letter: match[1].toLowerCase(), text: match[2].trim() }));
+          const answerMap = Object.fromEntries(
+            exercise.answer.split(",").map((pair) => {
+              const match = pair.trim().match(/(\d+)-([a-j])/i);
+              return [match[1], match[2].toLowerCase()];
+            })
+          );
+          const assigned = new Map();
+          let selectedLetter = "";
+
+          text(card, "p", "Перетащите букву с определением к соответствующему номеру.", "matching-instruction");
+          const board = document.createElement("div");
+          board.className = "matching-board";
+          const bank = document.createElement("div");
+          bank.className = "matching-bank";
+          text(bank, "h4", "Ответы", "matching-heading");
+          const slots = document.createElement("div");
+          slots.className = "matching-slots";
+          text(slots, "h4", "Вопросы", "matching-heading");
+          const feedback = text(card, "p", "Выберите карточку или перетащите её мышкой.", "matching-feedback");
+
+          function assign(letter, number) {
+            for (const [assignedNumber, assignedLetter] of assigned) {
+              if (assignedLetter === letter || assignedNumber === number) assigned.delete(assignedNumber);
+            }
+            assigned.set(number, letter);
+            selectedLetter = "";
+            renderBoard();
+          }
+
+          function renderBoard() {
+            bank.replaceChildren();
+            slots.replaceChildren();
+            text(bank, "h4", "Ответы", "matching-heading");
+            text(slots, "h4", "Вопросы", "matching-heading");
+
+            options.forEach((option) => {
+              const tile = text(bank, "button", `${option.letter}) ${option.text}`, "matching-answer");
+              tile.type = "button";
+              tile.draggable = true;
+              tile.classList.toggle("is-selected", selectedLetter === option.letter);
+              tile.classList.toggle("is-used", [...assigned.values()].includes(option.letter));
+              tile.addEventListener("click", () => {
+                selectedLetter = selectedLetter === option.letter ? "" : option.letter;
+                feedback.textContent = selectedLetter
+                  ? `Буква «${selectedLetter}» выбрана. Нажмите на номер вопроса.`
+                  : "Выберите карточку или перетащите её мышкой.";
+                renderBoard();
+              });
+              tile.addEventListener("dragstart", (event) => {
+                event.dataTransfer.setData("text/plain", option.letter);
+                event.dataTransfer.effectAllowed = "move";
+              });
+            });
+
+            questions.forEach((question) => {
+              const row = document.createElement("div");
+              row.className = "matching-question";
+              text(row, "strong", `${question.number}.`, "matching-number");
+              text(row, "span", question.text, "matching-question-text");
+              const dropZone = text(row, "button", "Перетащите букву сюда", "matching-dropzone");
+              dropZone.type = "button";
+              const assignedLetter = assigned.get(question.number);
+              if (assignedLetter) {
+                dropZone.textContent = `${assignedLetter}) Ответ выбран`;
+                dropZone.classList.add("has-answer");
+              }
+              dropZone.addEventListener("click", () => {
+                if (selectedLetter) assign(selectedLetter, question.number);
+              });
+              dropZone.addEventListener("dragover", (event) => {
+                event.preventDefault();
+                dropZone.classList.add("is-over");
+              });
+              dropZone.addEventListener("dragleave", () => dropZone.classList.remove("is-over"));
+              dropZone.addEventListener("drop", (event) => {
+                event.preventDefault();
+                dropZone.classList.remove("is-over");
+                assign(event.dataTransfer.getData("text/plain"), question.number);
+              });
+              slots.append(row);
+            });
+          }
+
+          renderBoard();
+          board.append(bank, slots);
+          card.append(board);
+
+          const check = button(card, "Проверить сопоставление", "matching-check");
+          check.className = "start-button";
+          check.addEventListener("click", () => {
+            const correct = questions.filter((question) => assigned.get(question.number) === answerMap[question.number]).length;
+            slots.querySelectorAll(".matching-question").forEach((row) => {
+              const number = row.querySelector(".matching-number").textContent.replace(".", "");
+              row.classList.toggle("is-correct", assigned.get(number) === answerMap[number]);
+              row.classList.toggle("is-wrong", assigned.has(number) && assigned.get(number) !== answerMap[number]);
+            });
+            feedback.className = `matching-feedback ${correct === questions.length ? "is-correct" : "is-wrong"}`;
+            feedback.textContent = `${correct} / ${questions.length} правильных ответов`;
+          });
+        }
+
+        function renderDragPairsExercise(card, exercise) {
+          const pairs = exercise.drag_pairs;
+          const options = [...exercise.drag_options].sort(() => Math.random() - 0.5);
+          const answerMap = Object.fromEntries(pairs.map((pair) => [pair.id, pair.answer]));
+          const allowReuse = new Set(pairs.map((pair) => pair.answer)).size < pairs.length;
+          const assigned = new Map();
+          let selectedAnswer = "";
+          text(card, "p", "Перетащите вариант ответа к подходящему вопросу.", "matching-instruction");
+
+          const board = document.createElement("div");
+          board.className = "matching-board generic-drag-board";
+          const bank = document.createElement("div");
+          bank.className = "matching-bank";
+          const slots = document.createElement("div");
+          slots.className = "matching-slots";
+          const feedback = text(card, "p", "Можно также выбрать карточку и нажать на вопрос.", "matching-feedback");
+
+          function assign(answer, id) {
+            for (const [assignedId, assignedAnswer] of assigned) {
+              if (assignedId === id || (!allowReuse && assignedAnswer === answer)) assigned.delete(assignedId);
+            }
+            assigned.set(id, answer);
+            selectedAnswer = "";
+            renderBoard();
+          }
+
+          function renderBoard() {
+            bank.replaceChildren();
+            slots.replaceChildren();
+            text(bank, "h4", "Варианты ответа", "matching-heading");
+            text(slots, "h4", "Вопросы", "matching-heading");
+            options.forEach((answer) => {
+              const tile = text(bank, "button", answer, "matching-answer");
+              tile.type = "button";
+              tile.draggable = true;
+              tile.classList.toggle("is-selected", selectedAnswer === answer);
+              tile.classList.toggle("is-used", !allowReuse && [...assigned.values()].includes(answer));
+              tile.addEventListener("click", () => {
+                selectedAnswer = selectedAnswer === answer ? "" : answer;
+                renderBoard();
+              });
+              tile.addEventListener("dragstart", (event) => {
+                event.dataTransfer.setData("text/plain", answer);
+                event.dataTransfer.effectAllowed = "move";
+              });
+            });
+            pairs.forEach((pair) => {
+              const row = document.createElement("div");
+              row.className = "matching-question";
+              text(row, "strong", `${pair.id}.`, "matching-number");
+              text(row, "span", pair.prompt, "matching-question-text");
+              const drop = text(row, "button", "Перетащите ответ сюда", "matching-dropzone");
+              drop.type = "button";
+              if (assigned.has(pair.id)) {
+                drop.textContent = assigned.get(pair.id);
+                drop.classList.add("has-answer");
+              }
+              drop.addEventListener("click", () => {
+                if (selectedAnswer) assign(selectedAnswer, pair.id);
+              });
+              drop.addEventListener("dragover", (event) => {
+                event.preventDefault();
+                drop.classList.add("is-over");
+              });
+              drop.addEventListener("dragleave", () => drop.classList.remove("is-over"));
+              drop.addEventListener("drop", (event) => {
+                event.preventDefault();
+                drop.classList.remove("is-over");
+                assign(event.dataTransfer.getData("text/plain"), pair.id);
+              });
+              slots.append(row);
+            });
+          }
+
+          renderBoard();
+          board.append(bank, slots);
+          card.append(board);
+          const check = button(card, "Проверить ответы", "drag-pairs-check");
+          check.className = "start-button";
+          check.addEventListener("click", () => {
+            const correct = pairs.filter((pair) => assigned.get(pair.id) === answerMap[pair.id]).length;
+            slots.querySelectorAll(".matching-question").forEach((row, index) => {
+              const pair = pairs[index];
+              row.classList.toggle("is-correct", assigned.get(pair.id) === pair.answer);
+              row.classList.toggle("is-wrong", assigned.has(pair.id) && assigned.get(pair.id) !== pair.answer);
+            });
+            feedback.className = `matching-feedback ${correct === pairs.length ? "is-correct" : "is-wrong"}`;
+            feedback.textContent = `${correct} / ${pairs.length} правильных ответов`;
+          });
+        }
+
         function renderVocabularyHome(result) {
           setScreen(t().vocabularyKicker, t().vocabularyTitle, t().vocabularyIntro);
 
@@ -956,14 +1155,27 @@
           });
           screen.append(games);
 
-          text(screen, "h3", "Practice exercises", "section-title");
+          const practiceHeading = text(screen, "h3", "Practice exercises", "section-title");
+          practiceHeading.tabIndex = -1;
+          practiceHeading.id = "practice-exercises-heading";
           const list = document.createElement("div");
           list.className = "vocab-exercise-grid";
+          list.id = "practice-exercises-list";
           result.exercises.forEach((exercise, exerciseIndex) => {
             const card = document.createElement("article");
             card.className = "vocab-exercise-card";
             text(card, "span", String(exerciseIndex + 1).padStart(2, "0"), "vocab-exercise-number");
             text(card, "h3", exercise.title);
+            if (exercise.id === 1) {
+              renderMatchingExercise(card, exercise);
+              list.append(card);
+              return;
+            }
+            if (exercise.drag_pairs) {
+              renderDragPairsExercise(card, exercise);
+              list.append(card);
+              return;
+            }
             text(card, "p", exercise.instruction, "vocab-card-description");
             (exercise.items || []).forEach((item) => text(card, "p", item));
             (exercise.options || []).forEach((option) => text(card, "p", option));
