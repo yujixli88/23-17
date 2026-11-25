@@ -31,9 +31,11 @@ game.db
 | [`game_logic.py`](./game_logic.py) | Контент квеста: подозреваемые, улики, загадки, допустимые ответы и финальная проверка обвинения. |
 | [`vocabulary.py`](./vocabulary.py) | Учебный раздел Crime vocabulary: 10 упражнений и 3 интерактивные мини-игры с вопросами и подсчётом очков. |
 | [`game.html`](./game.html) | Разметка игрового окна, панели профиля, блокнота, настроек и форм авторизации. |
-| [`game.js`](./game.js) | Клиентская логика: интерфейс, локализация RU/EN, запросы к API, сцены и профиль. |
-| [`static/css/horror-theme.css`](./static/css/horror-theme.css) | Кроваво-красная палитра и шрифты Underdog/Cormorant Garamond для всей игры. |
+| [`game.js`](./game.js) | Клиентская логика: главное меню RU/EN, регистрация и вход, музыка, сцены и профиль. |
+| [`static/css/horror-theme.css`](./static/css/horror-theme.css) | Общая кроваво-красная тема и шрифт Underdog для всего интерфейса и диалогов. |
 | [`static/js/story-data.js`](./static/js/story-data.js) | Русские и английские диалоги персонажей, перенесённые из `main`. |
+| [`static/audio/gemini_music.mp3`](./static/audio/gemini_music.mp3) | Музыка главного меню. |
+| [`static/audio/the_iron_pendulum.mp3`](./static/audio/the_iron_pendulum.mp3) | Музыка расследования. |
 | [`admin_app.py`](./admin_app.py) | Десктопная админ-панель на PySide6: просмотр пользователей, поиск, блокировка, разблокировка, сброс прогресса и удаление аккаунта. |
 | [`tests/test_passwords.py`](./tests/test_passwords.py) | Тесты регистрации, входа, хеширования и миграции аккаунтов. |
 | [`tests/test_profiles.py`](./tests/test_profiles.py) | Тесты сохранения профиля, проверки CSRF и валидации аватара. |

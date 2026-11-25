@@ -6,10 +6,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Underdog&display=swap" rel="stylesheet" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
     <meta
       name="description"
       content="Интерактивный детективный квест «Последний звонок в 23:17»."
@@ -2182,7 +2178,7 @@
       .account-panel { box-shadow: -14px 0 34px rgba(0,0,0,0); }
       .novel-dialogue { animation: none; }
     </style>
-    <link rel="stylesheet" href="/static/css/horror-theme.css?v=3" />
+    <link rel="stylesheet" href="/static/css/horror-theme.css?v=4" />
   </head>
   <body>
     <div class="desktop-shell">
@@ -2191,6 +2187,7 @@
           <button class="window-dots" type="button" id="open-settings" aria-label="Настройки" title="Настройки">•••</button>
           <span id="window-title">Детективное агентство · новое дело</span>
           <div class="window-controls">
+            <button class="home-menu-button" type="button" id="home-menu-button" aria-label="Главное меню" title="Главное меню" hidden>⌂</button>
             <button class="profile-toggle" type="button" id="profile-toggle" aria-label="Показать профиль" aria-controls="account-panel" aria-expanded="false" title="Профиль">♙</button>
             <button class="window-minimize" type="button" id="minimize-game" aria-label="Свернуть игру" title="Свернуть">−</button>
           </div>
@@ -2263,6 +2260,15 @@
             <option value="en">English</option>
           </select>
         </div>
+        <div class="volume-control">
+          <label id="music-volume-label" for="settings-volume">Громкость музыки</label>
+          <div class="volume-control-row">
+            <button class="music-toggle" id="music-toggle" type="button">Включить</button>
+            <input id="settings-volume" data-music-volume type="range" min="0" max="100" value="50" />
+            <output id="settings-volume-value" for="settings-volume">50%</output>
+          </div>
+          <p class="music-status" id="music-status" role="status"></p>
+        </div>
         <button class="settings-close" id="close-settings" type="button">Закрыть</button>
       </div>
     </dialog>
@@ -2283,7 +2289,8 @@
       </div>
     </dialog>
 
+    <audio id="background-music" loop preload="none" aria-label="Фоновая музыка" hidden></audio>
     <script src="/static/js/story-data.js?v=1" defer></script>
-    <script src="/game.js?v=20" defer></script>
+    <script src="/game.js?v=21" defer></script>
   </body>
 </html>

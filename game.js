@@ -23,6 +23,10 @@
         const profileAvatarPreview = document.getElementById("profile-avatar-preview");
         const profileFeedback = document.getElementById("profile-feedback");
         const accountAvatar = document.getElementById("account-avatar");
+        const backgroundMusic = document.getElementById("background-music");
+        const musicToggle = document.getElementById("music-toggle");
+        const homeMenuButton = document.getElementById("home-menu-button");
+        let musicStatusKey = "";
         const accountClues = document.getElementById("account-clues");
         const restoreGame = document.getElementById("restore-game");
         const storySources = window.lastChimeStories;
@@ -79,18 +83,35 @@
           stage: 0,
           csrfToken: "",
           user: null,
-          authMode: "login",
+          authMode: "menu",
           language: localStorage.getItem("game-language") === "en" ? "en" : "ru",
         };
 
         const copy = {
           ru: {
             title: "Последний звонок в 23:17",
+            menuIntro: "Раскройте тайну последнего звонка в старом загородном отеле.",
+            mainMenu: "Главное меню",
+            startRequiresSignIn: "Войдите или зарегистрируйтесь, чтобы начать игру.",
+            menuGuest: "Выберите, с чего начать расследование.",
+            menuWelcome: "Продолжите расследование или настройте профиль.",
+            menuSignIn: "Войти",
+            menuRegister: "Регистрация",
+            menuStart: "Начать игру",
+            menuContinue: "Продолжить игру",
+            menuProfile: "Профиль",
+            menuLogout: "Выйти",
+            backToMenu: "Назад в главное меню",
             windowLabel: "Игровое окно детективного квеста",
             window: "Детективное агентство · новое дело",
             settings: "Настройки",
             settingsDescription: "Параметры игры",
             closeSettings: "Закрыть",
+            musicVolume: "Громкость музыки",
+            musicPlay: "Включить",
+            musicPause: "Выключить",
+            musicBlocked: "Нажмите «Включить», чтобы запустить музыку.",
+            musicError: "Не удалось загрузить музыкальный файл.",
             profile: "Профиль пользователя",
             profileName: "Никнейм",
             profileAvatar: "Фото профиля (изображение до 2 МБ)",
@@ -99,7 +120,7 @@
             profileImageError: "Выберите PNG, JPEG, GIF или WebP размером не более 2 МБ.",
             profileSaveError: "Не удалось сохранить профиль на сервере.",
             language: "Язык",
-            logo: "🕰 Последний звонок",
+            logo: "🕰 Последний звонок в 23:17",
             account: "Аккаунт",
             accountName: "Детектив",
             accountRole: "Игрок",
@@ -264,12 +285,29 @@
             revealDialogues: storySegment("ru", "К утру буря немного стихла.", null),
           },
           en: {
-            title: "The Last Chime at 11:17",
+            title: "The Last Chime at 11:17 PM",
+            menuIntro: "Uncover the mystery of the final chime at the old country hotel.",
+            mainMenu: "Main menu",
+            startRequiresSignIn: "Sign in or register to start the game.",
+            menuGuest: "Choose how you would like to begin the investigation.",
+            menuWelcome: "Continue the investigation or update your profile.",
+            menuSignIn: "Sign in",
+            menuRegister: "Register",
+            menuStart: "Start game",
+            menuContinue: "Continue game",
+            menuProfile: "Profile",
+            menuLogout: "Sign out",
+            backToMenu: "Back to main menu",
             windowLabel: "Detective game window",
             window: "Detective Agency · New Case",
             settings: "Settings",
             settingsDescription: "Game preferences",
             closeSettings: "Close",
+            musicVolume: "Music volume",
+            musicPlay: "Play",
+            musicPause: "Pause",
+            musicBlocked: "Select Play to start the music.",
+            musicError: "Could not load the music file.",
             profile: "User profile",
             profileName: "Nickname",
             profileAvatar: "Profile photo (image up to 2 MB)",
@@ -278,7 +316,7 @@
             profileImageError: "Choose a PNG, JPEG, GIF, or WebP image no larger than 2 MB.",
             profileSaveError: "The profile could not be saved to the server.",
             language: "Language",
-            logo: "🕰 The Last Chime",
+            logo: "🕰 The Last Chime at 11:17 PM",
             account: "Account",
             accountName: "Detective",
             accountRole: "Player",
@@ -357,7 +395,7 @@
             noCase: "Case not started",
             progress: (found, total) => `11:17 PM · Clues found: ${found}/${total}`,
             caseNumber: "Case No. 2317",
-            introTitle: "The Last Chime at 11:17",
+            introTitle: "The Last Chime at 11:17 PM",
             intro: "A snowstorm has trapped you in an old country hotel. The owner has been found dead in his study, and the clock struck a time that should never have happened.",
             storm: "SNOWSTORM · 11:17 PM",
             startHint: "Start the investigation. Search the study, collect clues, and speak with the guests.",
@@ -447,6 +485,87 @@
         const areas = copy.ru.areas;
         const t = () => copy[state.language];
 
+        function updateMusicControls() {
+          const value = Math.round(backgroundMusic.volume * 100);
+          document.querySelectorAll("[data-music-volume]").forEach((input) => {
+            input.value = String(value);
+            const output = document.querySelector(`output[for="${input.id}"]`);
+            if (output) output.value = `${value}%`;
+          });
+          musicToggle.textContent = backgroundMusic.paused ? t().musicPlay : t().musicPause;
+          musicToggle.setAttribute("aria-label", musicToggle.textContent);
+          document.querySelectorAll(".music-status").forEach((status) => {
+            status.textContent = musicStatusKey ? t()[musicStatusKey] : "";
+          });
+        }
+
+        function setMusicVolume(value) {
+          const volume = Math.min(1, Math.max(0, Number(value) / 100));
+          backgroundMusic.volume = volume;
+          localStorage.setItem("game-music-volume", String(Math.round(volume * 100)));
+          localStorage.setItem("musicVolume", String(volume));
+          updateMusicControls();
+        }
+
+        async function playMusic() {
+          try {
+            await backgroundMusic.play();
+            musicStatusKey = "";
+          } catch (error) {
+            if (error.name === "AbortError") {
+              updateMusicControls();
+              return;
+            }
+            if (error.name === "NotAllowedError") {
+              musicStatusKey = "musicBlocked";
+            } else {
+              musicStatusKey = "musicError";
+              console.error(error);
+            }
+          }
+          updateMusicControls();
+        }
+
+        function setMusicTrack(track) {
+          const source = track === "game"
+            ? "/static/audio/the_iron_pendulum.mp3"
+            : "/static/audio/gemini_music.mp3";
+          if (backgroundMusic.getAttribute("src") !== source) {
+            backgroundMusic.src = source;
+            backgroundMusic.load();
+          }
+          void playMusic();
+        }
+
+        document.addEventListener("input", (event) => {
+          if (event.target.matches("[data-music-volume]")) {
+            setMusicVolume(event.target.value);
+          }
+        });
+        musicToggle.addEventListener("click", () => {
+          if (backgroundMusic.paused) void playMusic();
+          else backgroundMusic.pause();
+        });
+        backgroundMusic.addEventListener("play", updateMusicControls);
+        backgroundMusic.addEventListener("pause", updateMusicControls);
+        backgroundMusic.addEventListener("error", () => {
+          musicStatusKey = "musicError";
+          updateMusicControls();
+        });
+        const storedMusicVolume = localStorage.getItem("game-music-volume");
+        const legacyMusicVolume = localStorage.getItem("musicVolume");
+        const savedMusicVolume = storedMusicVolume !== null
+          ? Number(storedMusicVolume)
+          : legacyMusicVolume !== null
+            ? Number(legacyMusicVolume) * 100
+            : 50;
+        setMusicVolume(Number.isFinite(savedMusicVolume) ? savedMusicVolume : 50);
+        const resumeMusicOnInteraction = () => {
+          if (backgroundMusic.paused) void playMusic();
+        };
+        document.addEventListener("pointerdown", resumeMusicOnInteraction, { once: true });
+        document.addEventListener("keydown", resumeMusicOnInteraction, { once: true });
+
         function setLanguage(language) {
           const accountName = document.getElementById("account-name");
           const accountRole = document.getElementById("account-role");
@@ -460,6 +579,7 @@
           document.getElementById("settings-heading").textContent = t().settings;
           document.getElementById("settings-description").textContent = t().settingsDescription;
           document.getElementById("close-settings").textContent = t().closeSettings;
+          document.getElementById("music-volume-label").textContent = t().musicVolume;
           openSettings.setAttribute("aria-label", t().settings);
           openSettings.title = t().settings;
           document.getElementById("language-label").textContent = t().language;
@@ -494,12 +614,16 @@
           accountVocabularyButton.textContent = t().vocabularyButton;
           document.getElementById("minimize-game").setAttribute("aria-label", t().minimize);
           document.getElementById("minimize-game").title = t().minimize;
+          homeMenuButton.setAttribute("aria-label", t().mainMenu);
+          homeMenuButton.title = t().mainMenu;
+          homeMenuButton.hidden = !state.user || state.authMode === "menu";
           restoreGame.textContent = t().restore;
+          updateMusicControls();
           renderJournal();
           updateStatus();
-          if (!state.user) showAuth(state.authMode);
+          if (state.authMode === "menu" || (state.user && !state.started)) showMainMenu();
+          else if (!state.user) showAuth(state.authMode);
           else if (state.started) renderView();
-          else showLanding();
           accountName.textContent = profileName;
           accountRole.textContent = profileEmail;
         }
@@ -516,11 +640,15 @@
           state.authMode = mode;
           state.user = null;
           state.started = false;
+          homeMenuButton.hidden = true;
+          profileToggle.hidden = true;
+          setMusicTrack("menu");
           accountLogout.hidden = true;
           document.getElementById("account-name").textContent = t().accountName;
           document.getElementById("account-role").textContent = t().accountRole;
           updateStatus();
           setScreen(t().account, mode === "register" ? t().signUp : t().signIn, t().authIntro);
+          screen.classList.add("auth-screen");
 
           const form = document.createElement("form");
           form.className = "auth-form";
@@ -669,6 +797,9 @@
           switchButton.addEventListener("click", () => {
             showAuth(mode === "register" ? "login" : "register");
           });
+          const backButton = text(form, "button", t().backToMenu, "action-button");
+          backButton.type = "button";
+          backButton.addEventListener("click", () => showMainMenu());
           form.addEventListener("submit", async (event) => {
             event.preventDefault();
             if (!checkPassword()) {
@@ -790,11 +921,8 @@
             (state.stage > 0 || state.clues.size > 0);
           state.view = "scene";
           updateAccount(state.user);
-          if (state.game.progress.completed) {
-            setScreen(t().caseNumber, t().gameCompleted, t().gameCompleted);
-          } else {
-            renderView();
-          }
+          state.authMode = "menu";
+          showMainMenu();
         }
 
         function button(parent, label, action, value) {
@@ -807,9 +935,114 @@
 
         function setScreen(kicker, heading, description) {
           screen.replaceChildren();
+          screen.classList.remove("auth-screen", "menu-screen", "story-screen");
           text(screen, "div", kicker, "scene-kicker");
           text(screen, "h2", heading, "scene-title");
           if (description) text(screen, "p", description, "scene-copy");
+        }
+
+        function showMainMenu(errorMessage = "") {
+          state.authMode = "menu";
+          setMusicTrack("menu");
+          homeMenuButton.hidden = !state.user;
+          profileToggle.hidden = !state.user;
+          accountLogout.hidden = !state.user;
+          if (!state.user) {
+            document.getElementById("account-name").textContent = t().accountName;
+            document.getElementById("account-role").textContent = t().accountRole;
+          }
+          setScreen(t().caseNumber, t().title, t().menuIntro);
+          screen.classList.add("menu-screen");
+
+          const panel = document.createElement("section");
+          panel.className = "main-menu-panel";
+          text(panel, "h3", state.user ? t().menuWelcome : t().menuGuest);
+          if (errorMessage) text(panel, "p", errorMessage, "menu-error");
+
+          const actions = document.createElement("div");
+          actions.className = "main-menu-actions";
+          function addMenuAction(label, action, primary = false) {
+            const item = text(
+              actions,
+              "button",
+              label,
+              `main-menu-button${primary ? " primary" : ""}`
+            );
+            item.type = "button";
+            item.dataset.action = action;
+          }
+
+          if (state.user) {
+            const canContinue = state.started
+              && state.game
+              && !state.game.progress.completed;
+            addMenuAction(
+              canContinue ? t().menuContinue : t().menuStart,
+              "menu-start",
+              true
+            );
+            addMenuAction(t().menuProfile, "menu-profile");
+            addMenuAction(t().menuLogout, "menu-logout");
+          } else {
+            addMenuAction(t().menuStart, "menu-start", true);
+            addMenuAction(t().menuSignIn, "menu-sign-in");
+            addMenuAction(t().menuRegister, "menu-register");
+          }
+          panel.append(actions);
+
+          const preferences = document.createElement("div");
+          preferences.className = "main-menu-settings";
+          const languageControls = document.createElement("div");
+          languageControls.className = "main-menu-languages";
+          ["ru", "en"].forEach((language) => {
+            const languageButton = text(
+              languageControls,
+              "button",
+              language.toUpperCase(),
+              "main-menu-language"
+            );
+            languageButton.type = "button";
+            languageButton.dataset.action = "choose-language";
+            languageButton.dataset.value = language;
+            languageButton.setAttribute(
+              "aria-pressed",
+              String(state.language === language)
+            );
+            languageButton.setAttribute(
+              "aria-label",
+              language === "ru" ? "Русский" : "English"
+            );
+          });
+          preferences.append(languageControls);
+
+          const volumeLabel = document.createElement("label");
+          volumeLabel.className = "main-menu-volume";
+          text(volumeLabel, "span", t().musicVolume);
+          const volumeRow = document.createElement("span");
+          volumeRow.className = "volume-control-row";
+          const volumeInput = document.createElement("input");
+          volumeInput.id = "main-menu-volume";
+          volumeInput.type = "range";
+          volumeInput.min = "0";
+          volumeInput.max = "100";
+          volumeInput.value = String(Math.round(backgroundMusic.volume * 100));
+          volumeInput.dataset.musicVolume = "";
+          volumeInput.setAttribute("aria-label", t().musicVolume);
+          volumeRow.append(volumeInput);
+          const volumeOutput = text(volumeRow, "output", `${volumeInput.value}%`);
+          volumeOutput.htmlFor = volumeInput.id;
+          volumeLabel.append(volumeRow);
+          preferences.append(volumeLabel);
+          const menuMusicStatus = text(preferences, "p", "", "music-status");
+          menuMusicStatus.setAttribute("role", "status");
+          panel.append(preferences);
+
+          const spider = document.createElement("span");
+          spider.className = "menu-spider";
+          spider.setAttribute("aria-hidden", "true");
+          panel.append(spider);
+          screen.append(panel);
+          updateMusicControls();
         }
 
         function addNovelDialogue(speaker, portrait = "🕵️", entries = null, scene = "study", choices = []) {
@@ -1374,6 +1607,7 @@
 
         function showLanding() {
           setScreen(t().caseNumber, t().introTitle, "");
+          screen.classList.add("story-screen");
           addNovelDialogue(t().detective, "🕵️", t().openingDialogues, "opening", [
             { label: t().start, action: "start" },
           ]);
@@ -1564,8 +1798,38 @@
           const target = event.target.closest("button[data-action]");
           if (!target) return;
           const { action, value } = target.dataset;
-          if (action === "start") {
+          if (action === "menu-sign-in") {
+            showAuth("login");
+          } else if (action === "menu-register") {
+            showAuth("register");
+          } else if (action === "menu-start") {
+            if (!state.user) {
+              showAuth("login", t().startRequiresSignIn);
+            } else if (state.game.progress.completed) {
+              setScreen(t().caseNumber, t().gameCompleted, t().gameCompleted);
+              const restart = button(screen, t().restart, "restart");
+              restart.className = "start-button";
+            } else if (state.started) {
+              state.authMode = "game";
+              setMusicTrack("game");
+              renderView();
+            } else {
+              state.authMode = "game";
+              setMusicTrack("game");
+              showLanding();
+            }
+          } else if (action === "menu-profile") {
+            profileOpen.click();
+          } else if (action === "menu-logout") {
+            accountLogout.click();
+          } else if (action === "choose-language") {
+            setLanguage(value);
+          } else if (action === "main-menu") {
+            showMainMenu();
+          } else if (action === "start") {
             state.started = true;
+            state.authMode = "game";
+            setMusicTrack("game");
             state.view = "scene";
             updateStatus();
             renderView();
@@ -1579,6 +1843,7 @@
               state.clues = new Set(progress.clues);
               state.started = true;
               state.view = "scene";
+              setMusicTrack("game");
               updateStatus();
               renderView();
             } catch (error) {
@@ -1613,6 +1878,7 @@
           restoreGame.hidden = true;
           state.started = true;
           state.view = "suspects";
+          setMusicTrack("game");
           updateStatus();
           renderView();
         });
@@ -1623,6 +1889,7 @@
           restoreGame.hidden = true;
           state.started = true;
           state.view = "journal";
+          setMusicTrack("game");
           updateStatus();
           renderView();
         });
@@ -1645,6 +1912,7 @@
             return;
           }
           state.started = true;
+          setMusicTrack("game");
           state.view = "scene";
           updateStatus();
           renderView();
@@ -1662,7 +1930,7 @@
             state.clues.clear();
             state.stage = 0;
             state.started = false;
-            showAuth("login");
+            showMainMenu();
           } catch (error) {
             setScreen(t().connectionError, t().logoutError, t().logoutError);
             console.error(error);
@@ -1791,18 +2059,23 @@
             if (!response.ok) throw new Error(`Could not check sign-in: ${response.status}`);
             const account = await response.json();
             if (!account.authenticated) {
-              showAuth("login");
+              showMainMenu();
               return;
             }
             state.csrfToken = account.csrf_token;
             state.user = account.user;
             await openUserGame();
           } catch (error) {
-            showAuth("login", t().authFailed);
+            state.csrfToken = "";
+            state.user = null;
+            state.game = null;
+            state.started = false;
+            showMainMenu(t().authFailed);
             console.error(error);
           }
         }
 
+        homeMenuButton.addEventListener("click", () => showMainMenu());
         setLanguage(state.language);
         initialize();
       })();
