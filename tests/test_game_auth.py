@@ -40,12 +40,14 @@ class AuthenticationAndProgressTests(unittest.TestCase):
 
     def test_game_page_loads_external_javascript(self):
         page = self.client.get("/")
-        script = self.client.get("/game.js?v=19")
+        script = self.client.get("/game.js?v=20")
         story = self.client.get("/static/js/story-data.js?v=1")
+        theme = self.client.get("/static/css/horror-theme.css?v=2")
 
         self.assertEqual(page.status_code, 200)
         self.assertIn('<script src="/static/js/story-data.js?v=1" defer></script>', page.text)
-        self.assertIn('<script src="/game.js?v=19" defer></script>', page.text)
+        self.assertIn('<script src="/game.js?v=20" defer></script>', page.text)
+        self.assertIn('<link rel="stylesheet" href="/static/css/horror-theme.css?v=2" />', page.text)
         self.assertIn('id="open-settings"', page.text)
         self.assertIn('id="settings-dialog"', page.text)
         self.assertEqual(script.status_code, 200)
@@ -59,6 +61,8 @@ class AuthenticationAndProgressTests(unittest.TestCase):
         self.assertEqual(story.status_code, 200)
         self.assertIn("window.lastChimeStories.ru", story.text)
         self.assertIn("window.lastChimeStories.en", story.text)
+        self.assertEqual(theme.status_code, 200)
+        self.assertIn(".novel-dialogue.has-choices", theme.text)
 
     def test_crime_vocabulary_is_protected_and_complete(self):
         self.assertEqual(self.client.get("/api/game/vocabulary").status_code, 401)

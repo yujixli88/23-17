@@ -125,11 +125,6 @@ def game_page():
     return FileResponse(BASE_DIR / "game.html")
 
 
-@app.get("/game.css", include_in_schema=False)
-def game_styles():
-    return FileResponse(BASE_DIR / "game.css", media_type="text/css")
-
-
 @app.get("/game.js", include_in_schema=False)
 def game_script():
     return FileResponse(BASE_DIR / "game.js", media_type="text/javascript")

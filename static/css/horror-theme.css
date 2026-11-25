@@ -1,0 +1,413 @@
+:root {
+  color-scheme: dark;
+  --ink: #ebe6e8;
+  --muted: #b3a9ad;
+  --panel: #171316;
+  --line: rgba(150, 57, 70, 0.38);
+  --gold: #c04455;
+  --red: #d84656;
+  --blood: #a82235;
+  --surface: #21191d;
+  --surface-deep: #100e11;
+  --font-display: "Underdog", cursive;
+  --font-reading: "Cormorant Garamond", Georgia, serif;
+}
+
+body {
+  color: var(--ink);
+  background:
+    radial-gradient(ellipse at 78% 6%, rgba(117, 24, 42, 0.24), transparent 36%),
+    radial-gradient(ellipse at 8% 88%, rgba(93, 92, 99, 0.12), transparent 38%),
+    linear-gradient(145deg, #09090b, #171316 56%, #0a090b);
+  font-family: var(--font-reading);
+}
+
+h1,
+h2,
+h3,
+.game-logo,
+.account-heading,
+.account-notebook h3,
+.scene-title,
+.novel-speaker,
+.settings-heading,
+.scene-kicker,
+.matching-heading,
+.vocab-exercise-number,
+.vocab-game-card h3,
+.vocab-exercise-card h3 {
+  font-family: var(--font-display);
+}
+
+button,
+input,
+select,
+textarea,
+.game-window button,
+.account-panel button,
+.settings-dialog button,
+.window-bar,
+.game-status,
+.section-label,
+.eyebrow {
+  font-family: var(--font-display);
+}
+
+.game-window,
+.account-panel,
+.settings-content,
+.profile-dialog {
+  border-color: var(--line);
+  background: linear-gradient(155deg, rgba(30, 22, 27, 0.98), rgba(13, 12, 15, 0.99));
+}
+
+.window-bar,
+.game-topbar {
+  border-color: rgba(150, 57, 70, 0.28);
+  background: rgba(13, 11, 14, 0.92);
+}
+
+.window-bar,
+.game-status,
+.account-role {
+  color: var(--muted);
+}
+
+.game-logo,
+.account-heading,
+.account-notebook h3,
+.novel-speaker,
+.settings-heading,
+.scene-kicker,
+.matching-heading,
+.vocab-exercise-number {
+  color: #dc6875;
+}
+
+.game-body {
+  background:
+    radial-gradient(ellipse at 72% 0%, rgba(90, 27, 40, 0.13), transparent 42%),
+    linear-gradient(180deg, #141115, #0d0c0f);
+}
+
+.scene-title,
+.novel-line,
+.scene-copy,
+.game-list-item,
+.account-clues,
+.settings-description,
+.auth-form,
+.profile-settings {
+  font-family: var(--font-reading);
+}
+
+.scene-title {
+  font-family: var(--font-display);
+  color: #eee5e7;
+  font-weight: 600;
+}
+
+.scene-copy,
+.novel-line,
+.game-list-item,
+.account-clues,
+.settings-description {
+  color: #d0c8cb;
+}
+
+.game-window button,
+button {
+  border-color: rgba(151, 54, 68, 0.52);
+  background: linear-gradient(145deg, #2b1a1f, #191418);
+  color: #eee7e9;
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.22);
+}
+
+.game-window button:hover:not(:disabled),
+button:hover:not(:disabled) {
+  border-color: #c34a5b;
+  background: linear-gradient(145deg, #492027, #28161b);
+  color: #fff;
+}
+
+.game-window button:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #e26876;
+  outline-offset: 3px;
+}
+
+.start-button,
+.account-start-button,
+.profile-save {
+  border-color: #bd3b4e;
+  background: linear-gradient(135deg, #762132, #a92c40);
+  color: #fff1f2;
+}
+
+.game-window .start-button {
+  border-color: #bd3b4e;
+  background: linear-gradient(135deg, #762132, #a92c40);
+  color: #fff1f2;
+  font-family: var(--font-display);
+}
+
+.game-window .start-button:hover:not(:disabled) {
+  border-color: #e05a6a;
+  background: linear-gradient(135deg, #92273a, #c0364b);
+}
+
+.start-button:hover:not(:disabled),
+.account-start-button:hover:not(:disabled),
+.profile-save:hover:not(:disabled) {
+  border-color: #e05a6a;
+  background: linear-gradient(135deg, #92273a, #c0364b);
+}
+
+.auth-form input,
+.profile-settings input,
+.language-picker select,
+.settings-row select {
+  border-color: rgba(151, 54, 68, 0.5);
+  background: #100d10;
+  color: var(--ink);
+}
+
+.novel-stage {
+  border-color: rgba(157, 59, 73, 0.48);
+  background:
+    radial-gradient(ellipse at 76% 18%, rgba(146, 34, 52, 0.22), transparent 24%),
+    linear-gradient(180deg, transparent 38%, rgba(6, 6, 8, 0.92)),
+    linear-gradient(115deg, #17171b 0%, #2b1b20 48%, #411c26 76%, #111114 100%);
+}
+
+.novel-stage[data-scene="opening"] {
+  background:
+    radial-gradient(ellipse at 74% 20%, rgba(176, 81, 89, 0.2), transparent 23%),
+    linear-gradient(180deg, transparent 42%, rgba(7, 7, 9, 0.94)),
+    linear-gradient(110deg, #15171a, #252329 48%, #3b2027 78%, #111114);
+}
+
+.novel-stage[data-scene="study"],
+.novel-stage[data-scene="evidence"] {
+  background:
+    radial-gradient(ellipse at 78% 24%, rgba(174, 57, 60, 0.24), transparent 25%),
+    linear-gradient(180deg, transparent 38%, rgba(7, 6, 8, 0.96)),
+    linear-gradient(115deg, #1a1719, #2d2022 49%, #402026 76%, #111012);
+}
+
+.novel-stage[data-scene="interview"] {
+  background:
+    radial-gradient(ellipse at 70% 24%, rgba(112, 82, 91, 0.2), transparent 25%),
+    linear-gradient(180deg, transparent 42%, rgba(7, 7, 9, 0.96)),
+    linear-gradient(115deg, #19171c, #292329 52%, #38202a 78%, #111014);
+}
+
+.novel-stage[data-scene="reveal"] {
+  background:
+    radial-gradient(ellipse at 76% 23%, rgba(201, 60, 75, 0.26), transparent 26%),
+    linear-gradient(180deg, transparent 36%, rgba(7, 6, 8, 0.97)),
+    linear-gradient(115deg, #1b151a, #352027 55%, #54212c 80%, #100e12);
+}
+
+.novel-dialogue {
+  border-color: rgba(167, 61, 76, 0.56);
+  background:
+    linear-gradient(110deg, rgba(104, 35, 48, 0.22), transparent 42%),
+    rgba(12, 10, 14, 0.94);
+}
+
+.novel-dialogue.has-choices {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.novel-dialogue.has-choices .novel-dialogue-copy {
+  grid-column: 1 / -1;
+}
+
+.novel-portrait {
+  border-color: rgba(151, 54, 68, 0.48);
+  background:
+    radial-gradient(circle at 50% 35%, rgba(166, 42, 58, 0.22), transparent 54%),
+    linear-gradient(155deg, #302328, #121114 72%);
+}
+
+.scene-visual {
+  border-color: rgba(157, 59, 73, 0.48);
+  background:
+    radial-gradient(ellipse at 50% 40%, rgba(137, 37, 52, 0.22), transparent 50%),
+    linear-gradient(145deg, #21191e, #111013 72%);
+  color: #c6b8bc;
+  font-family: var(--font-display);
+}
+
+.dialogue-choice,
+.action-button,
+.account-notebook-button,
+.account-guests,
+.restore-game,
+.quiet-button,
+.settings-close {
+  border-color: rgba(151, 54, 68, 0.46);
+  background: rgba(111, 34, 47, 0.24);
+  color: #eee6e8;
+}
+
+.dialogue-choice:hover,
+.action-button:hover {
+  border-color: #c64b5b;
+  background: rgba(145, 39, 55, 0.42);
+}
+
+.account-guests.active,
+.account-notebook-button.active {
+  border-color: #c44a5a;
+  background: rgba(133, 36, 51, 0.48);
+  color: #fff0f2;
+}
+
+.account-profile,
+.account-clues li,
+.account-empty,
+.game-list-item,
+.vocab-exercise-card,
+.matching-answer,
+.matching-dropzone,
+.matching-question,
+.vocab-answer-card,
+.vocab-question-card,
+.card,
+.suspect {
+  border-color: rgba(128, 75, 84, 0.36);
+  background: linear-gradient(145deg, rgba(38, 31, 35, 0.92), rgba(20, 17, 20, 0.96));
+  color: #e1dadd;
+}
+
+.vocab-game-card,
+.vocab-game-card-2,
+.vocab-game-card-3 {
+  border-color: rgba(153, 57, 71, 0.38);
+  background:
+    radial-gradient(circle at 90% 15%, rgba(158, 41, 58, 0.2), transparent 34%),
+    linear-gradient(145deg, #2b2025, #151316);
+}
+
+.vocab-answer-card:hover:not(:disabled),
+.matching-answer:hover:not(:disabled),
+.study-hotspot:hover {
+  border-color: #c44b5c;
+  background-color: rgba(125, 35, 50, 0.3);
+}
+
+.study-map {
+  border-color: rgba(150, 57, 70, 0.42);
+  background:
+    radial-gradient(ellipse at 72% 26%, rgba(130, 35, 49, 0.2), transparent 32%),
+    linear-gradient(145deg, #19181b, #2c2023 58%, #111114);
+}
+
+.study-map::before,
+.study-map::after {
+  border-color: rgba(155, 57, 72, 0.28);
+}
+
+.study-hotspot {
+  border-color: rgba(204, 74, 91, 0.76);
+  background: rgba(98, 29, 42, 0.76);
+  color: #fff0f2;
+}
+
+.study-hotspot:focus-visible {
+  border-color: #df6876;
+  background: rgba(98, 29, 42, 0.92);
+}
+
+.study-hotspot.is-found {
+  border-color: rgba(213, 192, 196, 0.68);
+  background: rgba(104, 91, 96, 0.76);
+  color: #fff;
+}
+
+.vocab-game-card::after {
+  background: rgba(144, 37, 54, 0.16);
+}
+
+.vocab-card-meta {
+  color: #b7aeb1;
+}
+
+.matching-answer.is-selected,
+.matching-dropzone.is-over,
+.matching-dropzone.has-answer {
+  border-color: #bd4658;
+  background: rgba(117, 34, 48, 0.36);
+  color: #f2e7e9;
+}
+
+.vocab-quiz-hero {
+  border-color: rgba(150, 57, 70, 0.38);
+  background: linear-gradient(90deg, rgba(113, 37, 51, 0.25), rgba(27, 21, 25, 0.5));
+}
+
+.vocab-progress span {
+  background: linear-gradient(90deg, #762132, #d5485a);
+}
+
+.vocab-question-card::after {
+  border-color: rgba(150, 57, 70, 0.28);
+  color: rgba(193, 63, 81, 0.36);
+}
+
+.vocab-result-panel {
+  border-color: rgba(162, 83, 94, 0.55);
+  background: rgba(92, 44, 53, 0.28);
+}
+
+.field-feedback.success,
+.matching-feedback.is-correct,
+.vocab-score-badge,
+.game-result {
+  border-color: rgba(162, 83, 94, 0.55);
+  background: rgba(92, 44, 53, 0.28);
+  color: #eadde0;
+}
+
+.field-feedback.error,
+.matching-feedback.is-wrong,
+.game-result.wrong,
+.auth-error {
+  border-color: rgba(211, 64, 82, 0.62);
+  background: rgba(109, 25, 38, 0.35);
+  color: #ffc7ce;
+}
+
+.password-requirements li.valid,
+.matching-question.is-correct,
+.matching-question.is-wrong,
+.vocab-answer-card.correct,
+.vocab-answer-card.wrong {
+  border-color: rgba(165, 82, 94, 0.6);
+  background: rgba(95, 43, 53, 0.3);
+  color: #eee4e6;
+}
+
+.account-backdrop {
+  background: rgba(5, 4, 7, 0.76);
+}
+
+.account-panel.is-open {
+  box-shadow: -18px 0 50px rgba(0, 0, 0, 0.55);
+}
+
+@media (max-width: 640px) {
+  .novel-dialogue {
+    font-size: 0.95rem;
+  }
+
+  .novel-dialogue.has-choices {
+    max-height: min(58vh, 430px);
+    overflow-y: auto;
+  }
+}

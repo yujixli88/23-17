@@ -845,6 +845,7 @@
           function renderChoices() {
             if (!choices.length) return;
             panel.replaceChildren();
+            panel.classList.add("has-choices");
             text(panel, "div", t().chooseAction, "novel-speaker");
             choicesPanel.replaceChildren();
             choicesPanel.hidden = false;
