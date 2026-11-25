@@ -40,7 +40,7 @@ class AuthenticationAndProgressTests(unittest.TestCase):
 
     def test_game_page_loads_external_javascript(self):
         page = self.client.get("/")
-        script = self.client.get("/game.js?v=21")
+        script = self.client.get("/game.js?v=22")
         story = self.client.get("/static/js/story-data.js?v=1")
         theme = self.client.get("/static/css/horror-theme.css?v=7")
         menu_music = self.client.head("/static/audio/gemini_music.mp3")
@@ -48,7 +48,7 @@ class AuthenticationAndProgressTests(unittest.TestCase):
 
         self.assertEqual(page.status_code, 200)
         self.assertIn('<script src="/static/js/story-data.js?v=1" defer></script>', page.text)
-        self.assertIn('<script src="/game.js?v=21" defer></script>', page.text)
+        self.assertIn('<script src="/game.js?v=22" defer></script>', page.text)
         self.assertIn('<link rel="stylesheet" href="/static/css/horror-theme.css?v=7" />', page.text)
         self.assertIn('id="open-settings"', page.text)
         self.assertIn('id="settings-dialog"', page.text)
@@ -59,6 +59,8 @@ class AuthenticationAndProgressTests(unittest.TestCase):
         self.assertIn("addNovelDialogue", script.text)
         self.assertIn("function showMainMenu", script.text)
         self.assertIn("The Last Chime at 11:17 PM", script.text)
+        self.assertNotIn("passwordRuleMaxBytes", script.text)
+        self.assertIn("maxBytes: new TextEncoder().encode(value).length <= 72", script.text)
         self.assertIn("/static/audio/gemini_music.mp3", script.text)
         self.assertIn("/static/audio/the_iron_pendulum.mp3", script.text)
         self.assertIn('settingsDialog.showModal()', script.text)

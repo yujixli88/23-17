@@ -152,7 +152,6 @@
             englishLevel: "Уровень английского",
             password: "Пароль",
             passwordRuleLength: "От 10 до 128 символов",
-            passwordRuleMaxBytes: "Не более 72 байт UTF-8",
             passwordRuleLowercase: "Строчная буква",
             passwordRuleUppercase: "Заглавная буква",
             passwordRuleNumber: "Цифра",
@@ -348,7 +347,6 @@
             englishLevel: "English level",
             password: "Password",
             passwordRuleLength: "10 to 128 characters",
-            passwordRuleMaxBytes: "At most 72 UTF-8 bytes",
             passwordRuleLowercase: "A lowercase letter",
             passwordRuleUppercase: "An uppercase letter",
             passwordRuleNumber: "A number",
@@ -696,7 +694,6 @@
             passwordRequirements.setAttribute("aria-live", "polite");
             const requirementLabels = {
               length: t().passwordRuleLength,
-              maxBytes: t().passwordRuleMaxBytes,
               lowercase: t().passwordRuleLowercase,
               uppercase: t().passwordRuleUppercase,
               number: t().passwordRuleNumber,
