@@ -30,9 +30,9 @@ game.db
 | [`database.py`](./database.py) | Отдельный слой хранения: путь к SQLite, подключение, таблицы пользователей, профилей, сессий и прогресса, а также миграции старой схемы. |
 | [`game_logic.py`](./game_logic.py) | Контент квеста: подозреваемые, улики, загадки, допустимые ответы и финальная проверка обвинения. |
 | [`vocabulary.py`](./vocabulary.py) | Учебный раздел Crime vocabulary: 10 упражнений и 3 интерактивные мини-игры с вопросами и подсчётом очков. |
-| [`game.html`](./game.html) | Разметка игрового окна, панели профиля, блокнота, настроек и форм авторизации. |
+| [`game.html`](./game.html) | Адаптивная разметка игры для ПК и телефона, панели профиля, настроек и форм авторизации. |
 | [`game.js`](./game.js) | Клиентская логика: главное меню RU/EN, регистрация и вход, музыка, сцены и профиль. |
-| [`static/css/horror-theme.css`](./static/css/horror-theme.css) | Общая кроваво-красная тема и шрифт Underdog для всего интерфейса и диалогов. |
+| [`static/css/horror-theme.css`](./static/css/horror-theme.css) | Адаптивная красно-чёрная тема и шрифт Underdog для всего интерфейса и диалогов. |
 | [`static/js/story-data.js`](./static/js/story-data.js) | Русские и английские диалоги персонажей, перенесённые из `main`. |
 | [`static/audio/gemini_music.mp3`](./static/audio/gemini_music.mp3) | Музыка главного меню. |
 | [`static/audio/the_iron_pendulum.mp3`](./static/audio/the_iron_pendulum.mp3) | Музыка расследования. |
