@@ -7,12 +7,9 @@ import sqlite3
 import time
 from collections import defaultdict, deque
 from datetime import date
-from pathlib import Path
 from typing import Literal
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
-from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 import auth
@@ -21,8 +18,6 @@ from vocabulary import get_vocabulary_exercises, get_vocabulary_games
 
 
 app = FastAPI(title="The Last Chime")
-BASE_DIR = Path(__file__).resolve().parent
-app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 SESSION_COOKIE = "last_chime_session"
 LOGIN_WINDOW_SECONDS = 15 * 60
 LOGIN_MAX_ATTEMPTS = 5
@@ -114,25 +109,7 @@ def enforce_login_limit(request: Request) -> deque:
 
 @app.get("/", include_in_schema=False)
 def home():
-    return FileResponse(BASE_DIR / "game.html")
-
-
-@app.get("/game", include_in_schema=False)
-@app.get("/menu", include_in_schema=False)
-@app.get("/login", include_in_schema=False)
-@app.get("/play", include_in_schema=False)
-def game_page():
-    return FileResponse(BASE_DIR / "game.html")
-
-
-@app.get("/game.css", include_in_schema=False)
-def game_styles():
-    return FileResponse(BASE_DIR / "game.css", media_type="text/css")
-
-
-@app.get("/game.js", include_in_schema=False)
-def game_script():
-    return FileResponse(BASE_DIR / "game.js", media_type="text/javascript")
+    return {"service": "The Last Chime API", "docs": "/docs"}
 
 
 @app.get("/api/auth/email-availability")

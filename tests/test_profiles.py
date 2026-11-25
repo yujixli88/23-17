@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from fastapi import HTTPException, Response
+from fastapi.testclient import TestClient
 from starlette.requests import Request
 
 _bootstrap = tempfile.TemporaryDirectory()
@@ -59,6 +60,17 @@ class ProfileApiTests(unittest.TestCase):
     def tearDown(self):
         self.database_patch.stop()
         self.temporary_directory.cleanup()
+
+    def test_backend_root_does_not_serve_frontend_pages(self):
+        with TestClient(main.app) as client:
+            response = client.get("/")
+
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(
+                response.json(),
+                {"service": "The Last Chime API", "docs": "/docs"},
+            )
+            self.assertEqual(client.get("/game").status_code, 404)
 
     def test_registration_endpoint_rejects_password_missing_a_character_class(self):
         payload = main.RegisterPayload(
