@@ -31,6 +31,31 @@ class AuthDatabaseTests(unittest.TestCase):
         self.database_patch.stop()
         self.temporary_directory.cleanup()
 
+    def test_registration_requires_matching_password_character_classes(self):
+        accepted = "Aa1!xxxxxx"
+        self.assertEqual(
+            auth.validate_registration(
+                "detective_17", "detective@example.com", accepted
+            )[0],
+            "detective_17",
+        )
+
+        rejected = (
+            "Aa1!short",
+            "ABCDEFGHIJ1!",
+            "abcdefghij1!",
+            "Abcdefghij!",
+            "Abcdefghij1",
+        )
+        for password in rejected:
+            with self.subTest(password=password):
+                with self.assertRaisesRegex(ValueError, "password"):
+                    auth.validate_registration(
+                        "detective_17",
+                        "detective@example.com",
+                        password,
+                    )
+
     def test_registration_hashes_password_and_authenticates_email_or_username(self):
         password = "DetectivePassword42!"
         user = auth.create_user(

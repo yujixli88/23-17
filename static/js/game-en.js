@@ -1,24 +1,26 @@
+(() => {
 let currentIndex = 0;
 let glitters = 0;
 let currentRank = "Basic level";
 
-window.onload = function() {
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-        const user = JSON.parse(savedUser);
-        window.renderUserProfile(user);
-        glitters = user.glitters;
+if (document.getElementById("speaker")) {
+    window.onload = function() {
+        const savedUser = localStorage.getItem('user');
+        if (savedUser) {
+            const user = JSON.parse(savedUser);
+            window.renderUserProfile(user);
+            glitters = user.glitters;
+        }
     }
 }
 
 const story = [
     { speaker: "voice", text: "️ The Last Chime at 11:17 PM" },
-    { speaker: "At 10:40 PM", text: "Arden announces:\n— Tomorrow morning, I’m going to-17\nEveryone takes his words as yet another act of manipulation." },
-    { speaker: "At 11:05 PM", text: "️ Arden retires to his study. " },
+    { speaker: "At 10:40 PM", text: "Arden announces: “Tomorrow morning, I’m going to change something. And some of you won’t like it.” Everyone assumes it is another attempt to manipulate them." },
+    { speaker: "At 11:15 PM", text: "Arden retires to his study." },
     { speaker: "At 11:17 PM", text: "️The chime of an antique grandfather clock echoes throughout the hotel. " },
     { speaker: "At 11:17 PM", text: "Eleven strikes."},
-    { speaker: "At 11:17 PM", text: "️And then — one more.The chime of an antique grandfather clock echoes throughout the hotel." },
-    { speaker: "At 11:17 PM", text: "️Eleven strikes. " },
+    { speaker: "At 11:17 PM", text: "And then — one more." },
     { speaker: "At 11:17 PM", text: "️The twelfth. " },
     { speaker: "At 11:17 PM", text: "️Only the housemaid notices something strange: that clock has been broken for ten years. " },
     { speaker: "At 11:17 PM", text: "️A few minutes later, the study door is found locked from the inside." },
@@ -27,14 +29,14 @@ const story = [
     { speaker: "At 11:17 PM", text: "️On the desk:\nA glass of red wine;\nAn open safe;\nAn old family photograph;\nA sheet of paper bearing a handwritten name: “Eliza”;\nThe victim’s pocket watch, stopped at 11:17 PM." },
     { speaker: "At 11:17", text: "️The window is open.\nFootprints are visible in the snow beneath it.\nBut they lead away from the window toward the forest.\nThere are no footprints leading toward the window." },
     { speaker: "👥 Suspects", text: "️1. Eliza Arden — the victim’s daughter, 29.\nShe claims she spent the entire evening in the library.\nHer motive is obvious: her father was planning to disinherit her.\nBut she says:\n— I hated him. But I didn’t kill him.\nAnd indeed, there is no blood on her clothes, and witnesses saw her in the library for almost the entire evening." },
-    { speaker: "👥 Suspects", text: "️3. Sophia Lange — the ex-wife, 51.\nAnd indeed, there is no blood on her clothes, and witnesses saw her in the library for almost the entire evening.\nTwenty years ago, Arden destroyed her reputation, costing her career.\nShe has returned to the hotel for the first time in many years.\nWhen asked why she came, she replies:\n— I wanted to make sure he finally got what he deserved." },
+    { speaker: "👥 Suspects", text: "️2. Mark Vale — the victim’s business partner, 47.\nArden was preparing to expose his financial fraud.\nMark says he was in the wine cellar at 11:10 PM, but its cameras went dark for seven minutes." },
+    { speaker: "👥 Suspects", text: "️3. Sophia Lange — the ex-wife, 51.\nTwenty years ago, Arden destroyed her reputation and ended her career.\nShe has returned to the hotel for the first time in many years.\nWhen asked why she came, she replies:\n— I wanted to make sure he finally got what he deserved." },
     { speaker: "👥 Suspects", text: "️4. Thomas Reed — the hotel manager, 36.\nHe has worked here since childhood.\nHe knows every secret passage, every old lock, and exactly how the clocks work.\nAnd he was the first to discover the body.\nFar too convenient." },
     { speaker: "👥 Suspects", text: "️5. May Hall — the housemaid, 24.\nShe was the last person to see Arden alive.\nShe brought him wine in his study at around 10:55 PM.\nWhen asked why Arden had written the name Eliza, she replies:\n— I don’t know. I can’t even read French.\nThe detective looks at her.\nBecause the name “Eliza” is written in perfectly ordinary letters." },
-    { speaker: "🔎 And now things get really interesting", text: "️The autopsy reveals that Arden was not poisoned by the wine.\nThe cause of death was a severe blow to the head.\nThere is no murder weapon in the study.\nHowever, a tiny spot of blood is found on the fireplace.\nBarely the size of a fingernail." },
-    { speaker: "voice", text: "️ The autopsy reveals that Arden was not poisoned by the wine.\nThe cause of death was a severe blow to the head.\nThere is no murder weapon in the study.\nHowever, a tiny spot of blood is found on the fireplace." },
-    { speaker: "Voice", text: "️Barely the size of a fingernail.\nAnd there is one more anomaly:\nThe victim’s watch did not stop at the moment of the murder. \nIt was deliberately stopped later." },
+    { speaker: "🔎 And now things get really interesting", text: "️The autopsy reveals that Arden was not poisoned by the wine." },
+    { speaker: "Voice", text: "The cause of death was a severe blow to the head. There was no murder weapon in the study. A tiny spot of blood, barely the size of a fingernail, was found on the fireplace." },
+    { speaker: "Voice", text: "There is one more anomaly: the victim’s watch did not stop at the moment of the murder. It was deliberately stopped later." },
     { speaker: "Voice", text: "️The footprints in the snow also turn out to be fake.\nAnd that is when the detective realizes the crucial point:\nThe killer never left through the window at all.\nHe wanted everyone to believe the murderer had escaped outside." },
-    { speaker: "Voice", text: "️" },
     { speaker: "", text: "️But why? " },
     { speaker: "Voice", text: "️Because the real problem was not how the killer had entered the study. \nIt was why he could leave it without appearing on a single security camera.\nAnd then the detective returns to the strange chime of the clock." },
     { speaker: "Voice", text: "️11:17 PM." },
@@ -49,7 +51,6 @@ const story = [
     { speaker: "Voice", text: "️The caption reads:\n“Eliza, age 8.”.\nThe girl is holding a toy pocket watch.\nOn the back of the photograph, in Victor’s handwriting, are the words: \n“Real name — Eliza Lange.”" },
     { speaker: "Voice", text: "️In other words, Arden’s daughter is not Eliza Arden at all.\nShe is the daughter of Sophia Lange.\nAnd twenty-nine years ago, Arden kidnapped her from her mother and forged the documents."},
     { speaker: "Voice", text: "️That is why Sophia came.\nThat is why Arden wrote “Eliza.”\nAnd that is why the murder turns out to be something entirely different from what it first appears." },
-    { speaker: "Voice", text: "️" },
     { speaker: "Voice", text: "️By morning, the storm had eased somewhat." },
     { speaker: "Voice", text: "️The detective stood in Victor Arden’s study, staring at the stopped clock." },
     { speaker: "Sophia", text: "️So you finally figured it out,” said quietly." },
@@ -198,12 +199,17 @@ const story = [
 
     ];
 
+window.lastChimeStories = window.lastChimeStories || {};
+window.lastChimeStories.en = story;
+
     function renderLine() {
         document.getElementById('speaker').innerText = story[currentIndex].speaker;
         document.getElementById('text').innerText = story[currentIndex].text;
     }
 
-    renderLine();
+    if (document.getElementById("speaker") && document.getElementById("text")) {
+        renderLine();
+    }
 
     function toggleSidebar() {
         document.getElementById('sidebar').classList.toggle('open');
@@ -230,3 +236,9 @@ const story = [
     function goToMenu() {
         window.location.href = '/';
     }
+
+    window.toggleSidebar = toggleSidebar;
+    window.nextLine = nextLine;
+    window.claimAchievement = claimAchievement;
+    window.goToMenu = goToMenu;
+})();

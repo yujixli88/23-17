@@ -6,7 +6,7 @@ from datetime import date, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
-from fastapi import HTTPException
+from fastapi import HTTPException, Response
 from starlette.requests import Request
 
 _bootstrap = tempfile.TemporaryDirectory()
@@ -59,6 +59,19 @@ class ProfileApiTests(unittest.TestCase):
     def tearDown(self):
         self.database_patch.stop()
         self.temporary_directory.cleanup()
+
+    def test_registration_endpoint_rejects_password_missing_a_character_class(self):
+        payload = main.RegisterPayload(
+            username="weak_password",
+            email="weak@example.com",
+            password="abcdefghij1!",
+        )
+
+        with self.assertRaises(HTTPException) as error:
+            main.register(payload, Response())
+
+        self.assertEqual(error.exception.status_code, 422)
+        self.assertEqual(error.exception.detail["code"], "password")
 
     def test_profile_update_requires_csrf_and_persists_private_fields_and_avatar(self):
         avatar = base64.b64encode(b"\x89PNG\r\n\x1a\n").decode("ascii")

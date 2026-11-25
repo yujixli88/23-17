@@ -32,7 +32,7 @@ login_attempts = defaultdict(deque)
 class RegisterPayload(BaseModel):
     username: str = Field(min_length=3, max_length=32)
     email: str = Field(min_length=3, max_length=254)
-    password: str = Field(min_length=12, max_length=128)
+    password: str = Field(min_length=10, max_length=128)
     english_level: Literal["A1", "A2", "B1", "B2", "C1", "C2"] = "B2"
 
 
@@ -118,6 +118,9 @@ def home():
 
 
 @app.get("/game", include_in_schema=False)
+@app.get("/menu", include_in_schema=False)
+@app.get("/login", include_in_schema=False)
+@app.get("/play", include_in_schema=False)
 def game_page():
     return FileResponse(BASE_DIR / "game.html")
 
@@ -163,7 +166,10 @@ def register(payload: RegisterPayload, response: Response):
         messages = {
             "username": "Use 3–32 English letters, numbers, dots, underscores, or dashes.",
             "email": "Enter a valid email address.",
-            "password": "Password must be between 12 and 128 characters.",
+            "password": (
+                "Use 10-128 characters with a lowercase letter, an uppercase "
+                "letter, a number, and a symbol."
+            ),
             "english_level": "Choose a valid English level.",
         }
         raise HTTPException(

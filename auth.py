@@ -6,6 +6,7 @@ import re
 import secrets
 import sqlite3
 import time
+import unicodedata
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Iterator
@@ -67,6 +68,18 @@ def valid_email(email: str) -> bool:
     )
 
 
+def valid_password(password: str) -> bool:
+    categories = [unicodedata.category(character) for character in password]
+    return (
+        len(password) >= 10
+        and len(password) <= 128
+        and any(category == "Ll" for category in categories)
+        and any(category == "Lu" for category in categories)
+        and any(category == "Nd" for category in categories)
+        and any(category.startswith(("P", "S")) for category in categories)
+    )
+
+
 def validate_registration(
     username: str,
     email: str,
@@ -79,7 +92,7 @@ def validate_registration(
         raise ValueError("username")
     if not valid_email(email):
         raise ValueError("email")
-    if len(password) < 12 or len(password) > 128:
+    if not valid_password(password):
         raise ValueError("password")
     if english_level not in {"A1", "A2", "B1", "B2", "C1", "C2"}:
         raise ValueError("english_level")

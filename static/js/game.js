@@ -1,13 +1,16 @@
+(() => {
 let currentIndex = 0;
 let glitters = 0;
 let currentRank = "Базовый уровень";
 
-window.onload = function() {
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-        const user = JSON.parse(savedUser);
-        window.renderUserProfile(user);
-        glitters = user.glitters;
+if (document.getElementById("speaker")) {
+    window.onload = function() {
+        const savedUser = localStorage.getItem('user');
+        if (savedUser) {
+            const user = JSON.parse(savedUser);
+            window.renderUserProfile(user);
+            glitters = user.glitters;
+        }
     }
 }
 
@@ -188,12 +191,17 @@ const story = [
      { speaker: "Голос", text: "В кабинете, оставшемся пустым, часы наконец запустили.\nСтрелки медленно двинулись вперёд.\n23:17 давно прошло.\nИ на этот раз они не остановились." },
 ];
 
+window.lastChimeStories = window.lastChimeStories || {};
+window.lastChimeStories.ru = story;
+
 function renderLine() {
     document.getElementById('speaker').innerText = story[currentIndex].speaker;
     document.getElementById('text').innerText = story[currentIndex].text;
 }
 
-renderLine();
+if (document.getElementById("speaker") && document.getElementById("text")) {
+     renderLine();
+}
 
 function toggleSidebar() {
     document.getElementById('sidebar').classList.toggle('open');
@@ -220,3 +228,9 @@ function claimAchievement(id, amount) {
 function goToMenu() {
     window.location.href = '/';
 }
+
+window.toggleSidebar = toggleSidebar;
+window.nextLine = nextLine;
+window.claimAchievement = claimAchievement;
+window.goToMenu = goToMenu;
+})();

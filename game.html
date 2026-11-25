@@ -1741,6 +1741,106 @@
       .account-panel.is-open { box-shadow: -14px 0 34px rgba(0,0,0,.3); }
       .account-panel { box-shadow: -14px 0 34px rgba(0,0,0,0); }
       .novel-dialogue { animation: none; }
+      .home-menu-button {
+        min-height: 34px;
+        padding: 6px 11px;
+        border: 1px solid rgba(231,186,150,.25);
+        border-radius: 9px;
+        background: rgba(255,255,255,.06);
+        color: #f4e9e6;
+        cursor: pointer;
+      }
+      .main-menu-panel {
+        width: min(720px, 100%);
+        margin: clamp(12px, 5vh, 52px) auto;
+        padding: clamp(22px, 5vw, 46px);
+        border: 1px solid rgba(231,186,150,.24);
+        border-radius: 22px;
+        background: linear-gradient(145deg, rgba(42,19,24,.98), rgba(20,14,17,.98));
+        box-shadow: 0 24px 70px rgba(0,0,0,.36);
+      }
+      .main-menu-panel h3 {
+        margin: 0 0 24px;
+        color: #f2d5ce;
+        font-size: clamp(1.1rem, 3vw, 1.4rem);
+        font-weight: 400;
+        line-height: 1.6;
+      }
+      .main-menu-actions { display: grid; gap: 12px; }
+      .main-menu-button {
+        min-height: 50px;
+        padding: 12px 16px;
+        border: 1px solid #633039;
+        border-radius: 9px;
+        background: #28171a;
+        color: #f4e9e6;
+        font: inherit;
+        text-align: center;
+        cursor: pointer;
+        transition: border-color .2s ease, background .2s ease, transform .2s ease;
+      }
+      .main-menu-button:hover {
+        border-color: #e5a4a5;
+        background: #45212a;
+        transform: translateY(-1px);
+      }
+      .main-menu-button.primary {
+        border-color: #a64b58;
+        background: linear-gradient(135deg, #7a303a, #53212a);
+        color: #fff0ef;
+      }
+      .main-menu-settings {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(200px, 1.4fr);
+        align-items: center;
+        gap: 18px;
+        margin-top: 26px;
+        padding-top: 20px;
+        border-top: 1px solid rgba(231,186,150,.18);
+      }
+      .main-menu-languages { display: flex; gap: 8px; }
+      .main-menu-language {
+        min-width: 48px;
+        min-height: 38px;
+        border: 1px solid #633039;
+        border-radius: 7px;
+        background: #1b1114;
+        color: #dcc9c5;
+        cursor: pointer;
+      }
+      .main-menu-language[aria-pressed="true"] {
+        border-color: #d2757c;
+        background: #51252d;
+        color: #fff;
+      }
+      .main-menu-volume {
+        display: grid;
+        gap: 8px;
+        color: #e6d3ce;
+        font-size: .88rem;
+      }
+      .main-menu-volume .volume-control-row { margin: 0; }
+      .main-menu-volume input[type="range"] { accent-color: #c85360; }
+      .password-requirements {
+        display: grid;
+        gap: 5px;
+        margin: 0;
+        padding: 13px 15px;
+        border: 1px solid rgba(231,186,150,.15);
+        border-radius: 8px;
+        background: rgba(0,0,0,.18);
+        color: var(--muted);
+        font-size: .84rem;
+        list-style: none;
+      }
+      .password-requirements li { display: flex; gap: 8px; align-items: center; }
+      .password-requirements li.valid { color: #9dc8a1; }
+      .password-requirements .criterion-status { width: 1em; color: #d2797e; }
+      .password-requirements li.valid .criterion-status { color: #9dc8a1; }
+      .password-tip { margin: 0; color: var(--muted); font-size: .82rem; }
+      @media (max-width: 540px) {
+        .main-menu-settings { grid-template-columns: 1fr; }
+      }
     </style>
   </head>
   <body>
@@ -1750,6 +1850,7 @@
           <button class="window-dots" type="button" id="open-settings" aria-label="Настройки" title="Настройки">•••</button>
           <span id="window-title">Детективное агентство · новое дело</span>
           <div class="window-controls">
+            <button class="home-menu-button" type="button" id="home-menu-button" aria-label="Главное меню" title="Главное меню">⌂</button>
             <button class="profile-toggle" type="button" id="profile-toggle" aria-label="Показать профиль" aria-controls="account-panel" aria-expanded="false" title="Профиль">♙</button>
             <button class="window-minimize" type="button" id="minimize-game" aria-label="Свернуть игру" title="Свернуть">−</button>
           </div>
@@ -1863,6 +1964,9 @@
     </dialog>
 
     <audio id="background-music" loop preload="none" aria-label="Фоновая музыка"></audio>
-    <script src="/game.js?v=17" defer></script>
+    <script src="/static/js/game.js?v=2" defer></script>
+    <script src="/static/js/game-en.js?v=2" defer></script>
+    <script src="/static/js/password-validation.js?v=2" defer></script>
+    <script src="/game.js?v=19" defer></script>
   </body>
 </html>
