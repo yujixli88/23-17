@@ -31,9 +31,8 @@ import database
 
 DATABASE_PATH = database.DATABASE_PATH
 REFRESH_INTERVAL_MS = 30_000
-DEFAULT_ADMIN_PASSWORD = "Folking123"
 ADMIN_PASSWORD_SALT = bytes.fromhex("8d5f5a6c1b2e9f304a7c6d8e9f102938")
-MIN_ADMIN_PASSWORD_LENGTH = 10
+MIN_ADMIN_PASSWORD_LENGTH = 16
 ADMIN_SCRYPT_MAXMEM = 64 * 1024 * 1024
 GAME_STAGES = {
     0: "Загадка 1",
@@ -108,8 +107,12 @@ def password_digest(password: str) -> bytes:
 class UserMonitorApp(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
-        self.admin_password = os.environ.get("GAME_ADMIN_PASSWORD", DEFAULT_ADMIN_PASSWORD)
-        self.admin_password_hash = password_digest(self.admin_password)
+        self.admin_password = os.environ.get("GAME_ADMIN_PASSWORD", "")
+        self.admin_password_hash = (
+            password_digest(self.admin_password)
+            if len(self.admin_password) >= MIN_ADMIN_PASSWORD_LENGTH
+            else b""
+        )
         self.failed_attempts = 0
         self.users: list[dict] = []
         self.search_input: QLineEdit | None = None

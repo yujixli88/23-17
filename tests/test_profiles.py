@@ -68,7 +68,7 @@ class ProfileApiTests(unittest.TestCase):
         )
 
         with self.assertRaises(HTTPException) as error:
-            main.register(payload, Response())
+            main.register(payload, Response(), make_request())
 
         self.assertEqual(error.exception.status_code, 422)
         self.assertEqual(error.exception.detail["code"], "password")

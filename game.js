@@ -159,18 +159,18 @@
             passwordPersonalWarning: "Совет: не включайте имя пользователя или часть email до @.",
             loginButton: "Войти",
             registerButton: "Зарегистрироваться",
+            registrationRateLimited: "Слишком много попыток регистрации. Подождите немного и попробуйте снова.",
             switchRegister: "Нет аккаунта? Зарегистрируйтесь",
             switchLogin: "Уже есть аккаунт? Войдите",
             emailChecking: "Проверяем адрес…",
             emailInvalid: "Введите корректный адрес электронной почты.",
-            emailTaken: "Этот адрес уже зарегистрирован.",
-            emailAvailable: "Этот адрес свободен ✓",
+            emailCheckAtSubmit: "Проверим адрес при регистрации.",
             signOut: "Выйти",
             showProfile: "Открыть профиль",
             hideProfile: "Закрыть профиль",
             authFailed: "Не удалось выполнить запрос. Проверьте данные и повторите попытку.",
             weakPassword: "Пароль не соответствует требованиям.",
-            usernameTaken: "Это имя пользователя уже занято.",
+            accountUnavailable: "Не удалось создать аккаунт с этими данными. Попробуйте войти или укажите другие данные.",
             authenticated: "Выполнен вход",
             continueGame: "Продолжить расследование",
             findThreeClues: "Найдите не менее трёх улик, чтобы открыть головоломки.",
@@ -354,18 +354,18 @@
             passwordPersonalWarning: "Tip: do not include your username or the part of your email before @.",
             loginButton: "Sign in",
             registerButton: "Create account",
+            registrationRateLimited: "Too many registration attempts. Wait a little and try again.",
             switchRegister: "New here? Create an account",
             switchLogin: "Already have an account? Sign in",
             emailChecking: "Checking address…",
             emailInvalid: "Enter a valid email address.",
-            emailTaken: "This email is already registered.",
-            emailAvailable: "This email is available ✓",
+            emailCheckAtSubmit: "We'll check this address when you register.",
             signOut: "Sign out",
             showProfile: "Open profile",
             hideProfile: "Close profile",
             authFailed: "The request failed. Check your details and try again.",
             weakPassword: "The password does not meet the requirements.",
-            usernameTaken: "This username is already in use.",
+            accountUnavailable: "We couldn't create an account with those details. Try signing in or use different details.",
             authenticated: "Signed in",
             continueGame: "Continue investigation",
             findThreeClues: "Find at least three clues to unlock the puzzles.",
@@ -760,9 +760,9 @@
                   if (!response.ok) throw new Error(`Email check failed: ${response.status}`);
                   const result = await response.json();
                   if (currentCheck !== checkNumber) return;
-                  emailFeedback.classList.add(result.available ? "success" : "error");
+                  emailFeedback.classList.add(result.valid ? "success" : "error");
                   emailFeedback.textContent = result.valid
-                    ? result.available ? t().emailAvailable : t().emailTaken
+                    ? t().emailCheckAtSubmit
                     : t().emailInvalid;
                 } catch (error) {
                   if (currentCheck === checkNumber) {
@@ -857,15 +857,17 @@
 
         function authErrorMessage(detail, retryAfter = "") {
           const code = detail && typeof detail === "object" ? detail.code : "";
-          if (code === "email_taken") return t().emailTaken;
-          if (code === "username_taken") return t().usernameTaken;
+          if (code === "account_unavailable") return t().accountUnavailable;
           if (code === "password") return t().weakPassword;
           if (code === "invalid_credentials") return t().authFailed;
-          if (code === "login_rate_limited") {
+          if (code === "login_rate_limited" || code === "registration_rate_limited") {
             const seconds = Number.parseInt(retryAfter, 10);
+            const message = code === "login_rate_limited"
+              ? t().loginRateLimited
+              : t().registrationRateLimited;
             return Number.isFinite(seconds) && seconds > 0
-              ? `${t().loginRateLimited} (${seconds} sec.)`
-              : t().loginRateLimited;
+              ? `${message} (${seconds} sec.)`
+              : message;
           }
           return detail && detail.message ? detail.message : t().authFailed;
         }

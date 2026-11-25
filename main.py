@@ -26,6 +26,7 @@ app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 SESSION_COOKIE = "last_chime_session"
 LOGIN_WINDOW_SECONDS = 15 * 60
 LOGIN_MAX_ATTEMPTS = 5
+REGISTRATION_MAX_ATTEMPTS = 5
 login_attempts = defaultdict(deque)
 
 
@@ -78,16 +79,22 @@ def require_csrf(request: Request, session: dict) -> None:
         )
 
 
-def set_session_cookie(response: Response, cookie_value: str) -> None:
-    secure_cookie = (
-        os.environ.get("GAME_COOKIE_SECURE", "").casefold() in {"1", "true", "yes"}
-    )
+def secure_cookie_enabled(request: Request) -> bool:
+    configured_value = os.environ.get("GAME_COOKIE_SECURE")
+    if configured_value is not None:
+        return configured_value.casefold() in {"1", "true", "yes"}
+    return request.url.scheme.casefold() == "https"
+
+
+def set_session_cookie(
+    response: Response, cookie_value: str, request: Request
+) -> None:
     response.set_cookie(
         key=SESSION_COOKIE,
         value=cookie_value,
         max_age=auth.SESSION_LIFETIME,
         httponly=True,
-        secure=secure_cookie,
+        secure=secure_cookie_enabled(request),
         samesite="lax",
         path="/",
     )
@@ -110,6 +117,25 @@ def enforce_login_limit(request: Request) -> deque:
             headers={"Retry-After": str(retry_after)},
         )
     return attempts
+
+
+def enforce_registration_limit(request: Request) -> None:
+    client_ip = request.client.host if request.client else "unknown"
+    attempts = login_attempts[f"registration:{client_ip}"]
+    now = time.monotonic()
+    while attempts and now - attempts[0] >= LOGIN_WINDOW_SECONDS:
+        attempts.popleft()
+    if len(attempts) >= REGISTRATION_MAX_ATTEMPTS:
+        retry_after = max(1, int(LOGIN_WINDOW_SECONDS - (now - attempts[0])))
+        raise HTTPException(
+            status_code=429,
+            detail={
+                "code": "registration_rate_limited",
+                "message": "Too many registration attempts. Try again later.",
+            },
+            headers={"Retry-After": str(retry_after)},
+        )
+    attempts.append(now)
 
 
 @app.get("/", include_in_schema=False)
@@ -144,11 +170,16 @@ def check_email_availability(email: str, request: Request):
     normalized_email = auth.normalize_email(email)
     if not auth.valid_email(normalized_email):
         return {"valid": False, "available": False, "code": "invalid_email"}
-    return {"valid": True, "available": auth.email_availability(normalized_email)}
+    return {"valid": True}
 
 
 @app.post("/api/auth/register")
-def register(payload: RegisterPayload, response: Response):
+def register(
+    payload: RegisterPayload,
+    response: Response,
+    request: Request,
+):
+    enforce_registration_limit(request)
     try:
         username, email, english_level = auth.validate_registration(
             payload.username,
@@ -176,33 +207,16 @@ def register(payload: RegisterPayload, response: Response):
             username, email, payload.password, english_level
         )
     except sqlite3.IntegrityError as error:
-        error_text = str(error).casefold()
-        if "users.email" in error_text:
-            raise HTTPException(
-                status_code=409,
-                detail={
-                    "code": "email_taken",
-                    "message": "This email is already registered.",
-                },
-            ) from error
-        if "users.username" in error_text:
-            raise HTTPException(
-                status_code=409,
-                detail={
-                    "code": "username_taken",
-                    "message": "This username is already in use.",
-                },
-            ) from error
         raise HTTPException(
             status_code=409,
             detail={
-                "code": "database_conflict",
-                "message": "The account could not be created. Please try again.",
+                "code": "account_unavailable",
+                "message": "The account could not be created with those details.",
             },
         ) from error
 
     cookie_value, csrf_token = auth.create_session(user["id"])
-    set_session_cookie(response, cookie_value)
+    set_session_cookie(response, cookie_value, request)
     return {"authenticated": True, "user": user, "csrf_token": csrf_token}
 
 
@@ -227,7 +241,7 @@ def login(payload: LoginPayload, request: Request, response: Response):
         )
     attempts.clear()
     cookie_value, csrf_token = auth.create_session(user["id"])
-    set_session_cookie(response, cookie_value)
+    set_session_cookie(response, cookie_value, request)
     return {"authenticated": True, "user": user, "csrf_token": csrf_token}
 
 
@@ -252,7 +266,11 @@ def logout(
     require_csrf(request, session)
     auth.delete_session(session["session_hash"])
     response.delete_cookie(
-        SESSION_COOKIE, path="/", httponly=True, samesite="lax"
+        SESSION_COOKIE,
+        path="/",
+        httponly=True,
+        secure=secure_cookie_enabled(request),
+        samesite="lax",
     )
     return {"authenticated": False}
 

@@ -1,3 +1,4 @@
+import os
 import tempfile
 import sqlite3
 import unittest
@@ -40,7 +41,7 @@ class AuthenticationAndProgressTests(unittest.TestCase):
 
     def test_game_page_loads_external_javascript(self):
         page = self.client.get("/")
-        script = self.client.get("/game.js?v=22")
+        script = self.client.get("/game.js?v=24")
         story = self.client.get("/static/js/story-data.js?v=1")
         theme = self.client.get("/static/css/horror-theme.css?v=7")
         menu_music = self.client.head("/static/audio/gemini_music.mp3")
@@ -48,7 +49,7 @@ class AuthenticationAndProgressTests(unittest.TestCase):
 
         self.assertEqual(page.status_code, 200)
         self.assertIn('<script src="/static/js/story-data.js?v=1" defer></script>', page.text)
-        self.assertIn('<script src="/game.js?v=22" defer></script>', page.text)
+        self.assertIn('<script src="/game.js?v=24" defer></script>', page.text)
         self.assertIn('<link rel="stylesheet" href="/static/css/horror-theme.css?v=7" />', page.text)
         self.assertIn('id="open-settings"', page.text)
         self.assertIn('id="settings-dialog"', page.text)
@@ -196,25 +197,35 @@ class AuthenticationAndProgressTests(unittest.TestCase):
             self.client.get("/api/auth/email-availability", params={"email": "bad"}).json(),
             {"valid": False, "available": False, "code": "invalid_email"},
         )
-        self.assertTrue(
-            self.client.get(
-                "/api/auth/email-availability",
-                params={"email": "New.Player@example.com"},
-            ).json()["available"]
-        )
+        valid_email = self.client.get(
+            "/api/auth/email-availability",
+            params={"email": "New.Player@example.com"},
+        ).json()
+        self.assertEqual(valid_email, {"valid": True})
 
         registered = self.register("New.Player@example.com")
         self.assertEqual(registered.status_code, 200)
         self.assertIn("httponly", registered.headers["set-cookie"].casefold())
-        self.assertFalse(
+        self.assertEqual(
             self.client.get(
                 "/api/auth/email-availability",
-                params={"email": "new.player@example.com"},
-            ).json()["available"]
+                params={"email": "New.Player@example.com"},
+            ).json(),
+            valid_email,
         )
-        duplicate = self.register("NEW.PLAYER@example.com")
-        self.assertEqual(duplicate.status_code, 409)
-        self.assertEqual(duplicate.json()["detail"]["code"], "email_taken")
+
+        duplicate_email = self.register("NEW.PLAYER@example.com")
+        duplicate_username = self.register("another@example.com")
+        self.assertEqual(duplicate_email.status_code, 409)
+        self.assertEqual(duplicate_username.status_code, 409)
+        self.assertEqual(
+            duplicate_email.json()["detail"],
+            duplicate_username.json()["detail"],
+        )
+        self.assertEqual(
+            duplicate_email.json()["detail"]["code"],
+            "account_unavailable",
+        )
 
         with auth.connect() as connection:
             saved = connection.execute(
@@ -223,6 +234,57 @@ class AuthenticationAndProgressTests(unittest.TestCase):
             ).fetchone()
         self.assertNotEqual(saved["password_hash"], "CasePassword42!")
         self.assertNotEqual(saved["password_hash"], saved["password_salt"])
+
+    def test_session_cookie_is_secure_for_https_and_on_deletion(self):
+        with patch.dict(os.environ) as environment:
+            environment.pop("GAME_COOKIE_SECURE", None)
+            with TestClient(main.app, base_url="https://testserver") as client:
+                registered = client.post(
+                    "/api/auth/register",
+                    json={
+                        "username": "SecureCookie",
+                        "email": "secure-cookie@example.com",
+                        "password": "SecureCookie42!",
+                    },
+                )
+                self.assertEqual(registered.status_code, 200)
+                self.assertIn("secure", registered.headers["set-cookie"].casefold())
+
+                logout = client.post(
+                    "/api/auth/logout",
+                    headers={
+                        "X-CSRF-Token": registered.json()["csrf_token"],
+                    },
+                )
+                self.assertEqual(logout.status_code, 200)
+                self.assertIn("secure", logout.headers["set-cookie"].casefold())
+
+    def test_registration_is_rate_limited(self):
+        for index in range(main.REGISTRATION_MAX_ATTEMPTS):
+            response = self.client.post(
+                "/api/auth/register",
+                json={
+                    "username": f"RateTester{index}",
+                    "email": f"rate-tester-{index}@example.com",
+                    "password": "RateTester42!",
+                },
+            )
+            self.assertEqual(response.status_code, 200)
+
+        blocked = self.client.post(
+            "/api/auth/register",
+            json={
+                "username": "RateTesterFinal",
+                "email": "rate-tester-final@example.com",
+                "password": "RateTester42!",
+            },
+        )
+        self.assertEqual(blocked.status_code, 429)
+        self.assertEqual(
+            blocked.json()["detail"]["code"],
+            "registration_rate_limited",
+        )
+        self.assertIn("retry-after", blocked.headers)
 
     def test_admin_delete_removes_account_data_and_frees_credentials(self):
         registered = self.register("delete-me@example.com")
