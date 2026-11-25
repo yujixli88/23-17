@@ -25,6 +25,52 @@
         const accountAvatar = document.getElementById("account-avatar");
         const accountClues = document.getElementById("account-clues");
         const restoreGame = document.getElementById("restore-game");
+        const storySources = window.lastChimeStories;
+        if (!storySources || !storySources.ru || !storySources.en) {
+          throw new Error("The Russian and English story files must load before the game.");
+        }
+
+        function storySegment(language, startMarker, endMarker = startMarker) {
+          const story = storySources[language];
+          const start = story.findIndex((entry) => entry.text.includes(startMarker));
+          const end = endMarker === null
+            ? story.length - 1
+            : story.findIndex(
+              (entry, index) => index >= start && entry.text.includes(endMarker)
+            );
+          if (start < 0 || end < start) {
+            throw new Error(`Could not find the ${language} story segment: ${startMarker}`);
+          }
+
+          const seenLines = new Set();
+          return story.slice(start, end + 1).flatMap((entry) => {
+            const line = entry.text.replace(/^[\s\uFE0E\uFE0F]+/u, "").trim();
+            const normalizedLine = line.replace(/\s+/gu, " ").toLocaleLowerCase(language);
+            if (!line || seenLines.has(normalizedLine)) return [];
+            seenLines.add(normalizedLine);
+            const sourceSpeaker = entry.speaker.trim();
+            const isNarrator = !sourceSpeaker
+              || /^(voice|at\s+\d|в\s+\d|голос|👥\s*suspects|🔎)/iu.test(sourceSpeaker);
+            const speaker = isNarrator
+              ? language === "en" ? "Narrator" : "Рассказчик"
+              : sourceSpeaker;
+            const portraits = {
+              "Detective": "🕵️", "Детектив": "🕵️",
+              "Eliza": "👩🏻", "Элиза": "👩🏻",
+              "Sophia": "👩🏼", "София": "👩🏼",
+              "May": "👩🏽", "Мэй": "👩🏽",
+              "Thomas": "🧑🏻", "Томас": "🧑🏻",
+              "Mark": "🧔🏻", "Марк": "🧔🏻",
+              "Arden": "🧔🏻", "Арден": "🧔🏻",
+            };
+            return [{
+              speaker,
+              portrait: portraits[speaker] || "🌨️",
+              line,
+            }];
+          });
+        }
+
         const state = {
           game: null,
           started: false,
@@ -50,8 +96,8 @@
             profileAvatar: "Фото профиля (изображение до 2 МБ)",
             profileSave: "Сохранить профиль",
             closeProfile: "Закрыть",
-            profileImageError: "Выберите изображение размером не более 2 МБ.",
-            profileSaveError: "Не удалось сохранить профиль в этом браузере.",
+            profileImageError: "Выберите PNG, JPEG, GIF или WebP размером не более 2 МБ.",
+            profileSaveError: "Не удалось сохранить профиль на сервере.",
             language: "Язык",
             logo: "🕰 Последний звонок",
             account: "Аккаунт",
@@ -83,7 +129,14 @@
             email: "Электронная почта",
             loginIdentifier: "Почта или имя пользователя",
             englishLevel: "Уровень английского",
-            password: "Пароль (не менее 12 символов)",
+            password: "Пароль",
+            passwordRuleLength: "От 10 до 128 символов",
+            passwordRuleMaxBytes: "Не более 72 байт UTF-8",
+            passwordRuleLowercase: "Строчная буква",
+            passwordRuleUppercase: "Заглавная буква",
+            passwordRuleNumber: "Цифра",
+            passwordRuleSymbol: "Специальный символ",
+            passwordPersonalWarning: "Совет: не включайте имя пользователя или часть email до @.",
             loginButton: "Войти",
             registerButton: "Зарегистрироваться",
             switchRegister: "Нет аккаунта? Зарегистрируйтесь",
@@ -96,7 +149,7 @@
             showProfile: "Открыть профиль",
             hideProfile: "Закрыть профиль",
             authFailed: "Не удалось выполнить запрос. Проверьте данные и повторите попытку.",
-            weakPassword: "Пароль должен содержать от 12 до 128 символов.",
+            weakPassword: "Пароль не соответствует требованиям.",
             usernameTaken: "Это имя пользователя уже занято.",
             authenticated: "Выполнен вход",
             continueGame: "Продолжить расследование",
@@ -192,45 +245,23 @@
               "На обратной стороне старой фотографии написано: «Настоящее имя — Элиза Ланге».",
               "Арден хотел оставить подсказку: подделка касалась не только документов, но и личности Элизы.",
             ],
-            openingDialogues: [
-              { speaker: "Рассказчик", portrait: "🌨️", line: "Снежная буря отрезала старый загородный отель от города. Вечером Виктор Арден собрал пятерых гостей на ужин." },
-              { speaker: "Виктор Арден", portrait: "🧔🏻", line: "Завтра утром я собираюсь кое-что изменить. И кое-кому из вас это очень не понравится." },
-              { speaker: "Рассказчик", portrait: "🌨️", line: "В 23:17 часы пробили одиннадцать раз. После паузы раздался ещё один удар. Вскоре Ардена нашли мёртвым в запертом кабинете." },
-              { speaker: "Детектив", portrait: "🕵️", line: "Окно открыто, следы ведут к лесу, а карманные часы остановились на 23:17. Слишком много совпадений." },
-            ],
-            studyDialogues: [
-              { speaker: "Рассказчик", portrait: "🕯️", line: "На столе стоят бокал вина и раскрытый сейф. Рядом лежат семейная фотография и лист с именем «Элиза»." },
-              { speaker: "Детектив", portrait: "🕵️", line: "Вино не отравлено. Причина смерти — удар по голове, но оружия в кабинете нет." },
-              { speaker: "Детектив", portrait: "🕵️", line: "Начну с часов, окна, камина и документов. Каждая деталь может изменить ход расследования." },
-            ],
+            openingDialogues: storySegment("ru", "Арден объявляет:", "На столе:"),
+            studyDialogues: storySegment("ru", "Вскрытие показывает:"),
             clueDialogues: [
-              [{ speaker: "Детектив", portrait: "🕵️", line: "Эти часы не работали десять лет. Кто-то заставил механизм сделать лишний удар вручную." }],
-              [{ speaker: "Детектив", portrait: "🕵️", line: "Следы ведут от окна к лесу, но к окну никто не подходил. Побег наружу инсценировали." }],
-              [{ speaker: "Детектив", portrait: "🕵️", line: "На камине осталось крошечное пятно крови. Кто-то ударил Ардена, но этого удара оказалось недостаточно, чтобы убить его." }],
-              [{ speaker: "Детектив", portrait: "🕵️", line: "На обороте фотографии написано: «Настоящее имя — Элиза Ланге». Элиза — дочь Софии." }],
-              [{ speaker: "Детектив", portrait: "🕵️", line: "Карманные часы остановили позже настоящей смерти. 23:17 — поддельное время." }],
+              storySegment("ru", "И тогда детектив возвращается к странному бою часов.", "И человек, который это сделал, должен был находиться рядом с ним ещё до 23:00."),
+              storySegment("ru", "Он хотел, чтобы все поверили, будто убийца сбежал наружу."),
+              storySegment("ru", "Причина смерти — сильный удар по голове.", "Размером буквально с ноготь."),
+              storySegment("ru", "И тут детектив замечает одну совершенно крошечную деталь.", "То есть дочь Ардена — вовсе не Элиза Арден."),
+              storySegment("ru", "часы жертвы остановились не в момент убийства."),
             ],
             interviewDialogues: {
-              eliza: [{ speaker: "Элиза", portrait: "👩🏻", line: "Я ненавидела его. Но не убивала. Почти весь вечер я была в библиотеке." }],
-              mark: [{ speaker: "Марк", portrait: "🧔🏻", line: "В 23:10 я был в винном погребе. Камеры выключились? Этого я объяснить не могу." }],
-              sofia: [{ speaker: "София", portrait: "👩🏼", line: "Я приехала впервые за много лет. Хотела убедиться, что он наконец получит то, что заслужил." }],
-              thomas: [{ speaker: "Томас", portrait: "🧑🏻", line: "Я знаю старые проходы и устройство часов. Но это не значит, что я убил Ардена." }],
-              may: [{ speaker: "Мэй", portrait: "👩🏽", line: "Я принесла ему вино около 22:55. Почему он написал имя Элиза? Не знаю. Я ведь не умею читать по-французски." }, { speaker: "Детектив", portrait: "🕵️", line: "Имя написано обычными буквами. Почему вы решили, что записка была по-французски?" }],
+              eliza: storySegment("ru", "1. Элиза Арден", "почти весь вечер."),
+              mark: storySegment("ru", "2. Марк Вейл", "на семь минут."),
+              sofia: storySegment("ru", "3. София Ланге", "что заслужил."),
+              thomas: storySegment("ru", "4. Томас Рид", "Слишком удобно."),
+              may: storySegment("ru", "5. Мэй Холл", "совершенно обычными буквами."),
             },
-            revealDialogues: [
-              { speaker: "София", portrait: "👩🏼", line: "Да, я ударила Ардена. Он смеялся, когда я спросила о дочери. Я увидела документы и ударила его. Он был жив, когда я ушла." },
-              { speaker: "София", portrait: "👩🏼", line: "Я услышала шаги и спряталась. В кабинет вошла Мэй. Она увидела Ардена на полу и наклонилась к нему. Я ушла через служебный проход." },
-              { speaker: "Детектив", portrait: "🕵️", line: "Мэй, вы вошли после Софии. Вы знали, что Арден ещё жив." },
-              { speaker: "Мэй", portrait: "👩🏽", line: "Он подставил моего брата. Брат умер в тюрьме, а Арден собирался уничтожить последние доказательства. Когда он попытался встать, я взяла кочергу и ударила его второй раз." },
-              { speaker: "Мэй", portrait: "👩🏽", line: "Я остановила часы на 23:17 и открыла окно. Томас помог сделать следы. Он никого не убивал." },
-              { speaker: "Элиза", portrait: "👩🏻", line: "Я узнала, что София — моя мать, только вчера. Я не знаю, кого считать семьёй. Но знаю: Виктор Арден не был моим отцом." },
-              { speaker: "Рассказчик", portrait: "🔥", line: "Через три месяца Элиза вернулась в закрытый отель, нашла последнее письмо Ардена и сожгла его. София ждала её у крыльца с двумя стаканчиками кофе." },
-              { speaker: "Элиза", portrait: "👩🏻", line: "Мам?" },
-              { speaker: "София", portrait: "👩🏼", line: "Да?" },
-              { speaker: "Рассказчик", portrait: "🕰️", line: "В пустом кабинете часы наконец пошли. 23:17 осталось в прошлом." },
-              { speaker: "Рассказчик", portrait: "📷", line: "София призналась в первом ударе, Мэй — в смертельном, Томас — в сокрытии следов. Перед отъездом детектив заметил под фотографией ещё одну записку: «София никогда не должна узнать, что произошло той ночью»." },
-              { speaker: "Детектив", portrait: "🕵️", line: "Что произошло двадцать девять лет назад — и почему Арден боялся, что София узнает правду?" },
-            ],
+            revealDialogues: storySegment("ru", "К утру буря немного стихла.", null),
           },
           en: {
             title: "The Last Chime at 11:17",
@@ -244,8 +275,8 @@
             profileAvatar: "Profile photo (image up to 2 MB)",
             profileSave: "Save profile",
             closeProfile: "Close",
-            profileImageError: "Choose an image no larger than 2 MB.",
-            profileSaveError: "This browser could not save the profile.",
+            profileImageError: "Choose a PNG, JPEG, GIF, or WebP image no larger than 2 MB.",
+            profileSaveError: "The profile could not be saved to the server.",
             language: "Language",
             logo: "🕰 The Last Chime",
             account: "Account",
@@ -277,7 +308,14 @@
             email: "Email address",
             loginIdentifier: "Email or username",
             englishLevel: "English level",
-            password: "Password (at least 12 characters)",
+            password: "Password",
+            passwordRuleLength: "10 to 128 characters",
+            passwordRuleMaxBytes: "At most 72 UTF-8 bytes",
+            passwordRuleLowercase: "A lowercase letter",
+            passwordRuleUppercase: "An uppercase letter",
+            passwordRuleNumber: "A number",
+            passwordRuleSymbol: "A special character",
+            passwordPersonalWarning: "Tip: do not include your username or the part of your email before @.",
             loginButton: "Sign in",
             registerButton: "Create account",
             switchRegister: "New here? Create an account",
@@ -290,7 +328,7 @@
             showProfile: "Open profile",
             hideProfile: "Close profile",
             authFailed: "The request failed. Check your details and try again.",
-            weakPassword: "Use a password with 12 to 128 characters.",
+            weakPassword: "The password does not meet the requirements.",
             usernameTaken: "This username is already in use.",
             authenticated: "Signed in",
             continueGame: "Continue investigation",
@@ -386,45 +424,23 @@
               "The back of the old photograph reads: “Her real name is Eliza Lange.”",
               "Arden left a clue: the lie was not only about documents, but also about Eliza's identity.",
             ],
-            openingDialogues: [
-              { speaker: "Narrator", portrait: "🌨️", line: "A snowstorm has cut the old country hotel off from town. That evening, Victor Arden gathered five guests for dinner." },
-              { speaker: "Victor Arden", portrait: "🧔🏻", line: "Tomorrow morning I am going to change something. And some of you will not like it." },
-              { speaker: "Narrator", portrait: "🌨️", line: "At 11:17, the clock struck eleven times. After a pause, there was one more chime. Soon Arden was found dead in his locked study." },
-              { speaker: "Detective", portrait: "🕵️", line: "The window is open, footprints lead to the forest, and the pocket watch stopped at 11:17. Too many coincidences." },
-            ],
-            studyDialogues: [
-              { speaker: "Narrator", portrait: "🕯️", line: "A glass of wine and an open safe sit on the desk. Beside them are a family photograph and a note with the name “Eliza.”" },
-              { speaker: "Detective", portrait: "🕵️", line: "The wine was not poisoned. Arden died from a blow to the head, but the weapon is missing." },
-              { speaker: "Detective", portrait: "🕵️", line: "I will examine the clock, window, fireplace, and documents. Any detail could change the case." },
-            ],
+            openingDialogues: storySegment("en", "Arden announces:", "On the desk:"),
+            studyDialogues: storySegment("en", "The autopsy reveals that Arden was not poisoned by the wine."),
             clueDialogues: [
-              [{ speaker: "Detective", portrait: "🕵️", line: "This clock has not worked for ten years. Someone made the mechanism strike one extra time by hand." }],
-              [{ speaker: "Detective", portrait: "🕵️", line: "The footprints lead from the window to the forest, but none lead to the window. The escape was staged." }],
-              [{ speaker: "Detective", portrait: "🕵️", line: "A tiny spot of blood remains on the fireplace. Someone struck Arden, but that blow was not enough to kill him." }],
-              [{ speaker: "Detective", portrait: "🕵️", line: "The back of the photograph reads: “Her real name is Eliza Lange.” Eliza is Sophia's daughter." }],
-              [{ speaker: "Detective", portrait: "🕵️", line: "The pocket watch was stopped after the real time of death. 11:17 was staged." }],
+              storySegment("en", "And then the detective returns to the strange chime of the clock.", "And whoever did it must have been near him before 11:00 PM."),
+              storySegment("en", "He wanted everyone to believe the murderer had escaped outside."),
+              storySegment("en", "The cause of death was a severe blow to the head.", "A tiny spot of blood, barely the size of a fingernail, was found on the fireplace."),
+              storySegment("en", "And then the detective notices one incredibly tiny detail.", "In other words, Arden’s daughter is not Eliza Arden at all."),
+              storySegment("en", "the victim’s watch did not stop at the moment of the murder."),
             ],
             interviewDialogues: {
-              eliza: [{ speaker: "Eliza", portrait: "👩🏻", line: "I hated him. But I did not kill him. I was in the library for most of the evening." }],
-              mark: [{ speaker: "Mark", portrait: "🧔🏻", line: "At 11:10 I was in the wine cellar. The cameras went off? I cannot explain that." }],
-              sofia: [{ speaker: "Sophia", portrait: "👩🏼", line: "I came here for the first time in years. I wanted to make sure he finally got what he deserved." }],
-              thomas: [{ speaker: "Thomas", portrait: "🧑🏻", line: "I know the old passages and how the clock works. That does not mean I killed Arden." }],
-              may: [{ speaker: "May", portrait: "👩🏽", line: "I brought him wine at about 10:55. Why did he write Eliza? I do not know. I cannot read French." }, { speaker: "Detective", portrait: "🕵️", line: "The name is written in ordinary letters. Why did you think the note was in French?" }],
+              eliza: storySegment("en", "1. Eliza Arden", "entire evening."),
+              mark: storySegment("en", "2. Mark Vale", "seven minutes."),
+              sofia: storySegment("en", "3. Sophia Lange", "what he deserved."),
+              thomas: storySegment("en", "4. Thomas Reed", "Far too convenient."),
+              may: storySegment("en", "5. May Hall", "perfectly ordinary letters."),
             },
-            revealDialogues: [
-              { speaker: "Sophia", portrait: "👩🏼", line: "Yes, I struck Arden. He laughed when I asked about my daughter. I saw the documents and hit him. He was alive when I left." },
-              { speaker: "Sophia", portrait: "👩🏼", line: "I heard footsteps and hid. May came in, saw Arden on the floor, and leaned over him. I left through a service passage." },
-              { speaker: "Detective", portrait: "🕵️", line: "May, you came in after Sophia. You knew Arden was still alive." },
-              { speaker: "May", portrait: "👩🏽", line: "He framed my brother. My brother died in prison, and Arden planned to destroy the last evidence. When he tried to stand, I took the poker and struck him a second time." },
-              { speaker: "May", portrait: "👩🏽", line: "I stopped the clock at 11:17 and opened the window. Thomas made the footprints. He did not kill anyone." },
-              { speaker: "Eliza", portrait: "👩🏻", line: "I learned yesterday that Sophia is my mother. I do not know whom to call family. But I know Victor Arden was not my father." },
-              { speaker: "Narrator", portrait: "🔥", line: "Three months later, Eliza returned to the closed hotel, found Arden's last letter, and burned it. Sophia was waiting outside with two cups of coffee." },
-              { speaker: "Eliza", portrait: "👩🏻", line: "Mom?" },
-              { speaker: "Sophia", portrait: "👩🏼", line: "Yes?" },
-              { speaker: "Narrator", portrait: "🕰️", line: "In the empty study, the clock finally began to move. 11:17 was in the past." },
-              { speaker: "Narrator", portrait: "📷", line: "Sophia admitted the first blow, May the fatal one, and Thomas the cover-up. Before leaving, the detective found another note beneath the photograph: “Sophia must never learn what happened that night.”" },
-              { speaker: "Detective", portrait: "🕵️", line: "What happened twenty-nine years ago, and why was Arden afraid Sophia would learn the truth?" },
-            ],
+            revealDialogues: storySegment("en", "By morning, the storm had eased somewhat.", null),
           },
         };
 
@@ -518,8 +534,9 @@
           emailInput.autocomplete = mode === "register" ? "email" : "username";
           emailInput.maxLength = 254;
 
+          let usernameInput = null;
           if (mode === "register") {
-            const usernameInput = addField(form, "username", t().username, "text", true);
+            usernameInput = addField(form, "username", t().username, "text", true);
             usernameInput.autocomplete = "username";
             usernameInput.minLength = 3;
             usernameInput.maxLength = 32;
@@ -541,8 +558,64 @@
 
           const passwordInput = addField(form, "password", t().password, "password", true);
           passwordInput.autocomplete = mode === "register" ? "new-password" : "current-password";
-          passwordInput.minLength = mode === "register" ? 12 : 1;
+          passwordInput.minLength = mode === "register" ? 10 : 1;
           passwordInput.maxLength = 128;
+
+          let checkPassword = () => true;
+          if (mode === "register") {
+            const passwordRequirements = document.createElement("ul");
+            passwordRequirements.className = "password-requirements";
+            passwordRequirements.setAttribute("aria-live", "polite");
+            const requirementLabels = {
+              length: t().passwordRuleLength,
+              maxBytes: t().passwordRuleMaxBytes,
+              lowercase: t().passwordRuleLowercase,
+              uppercase: t().passwordRuleUppercase,
+              number: t().passwordRuleNumber,
+              symbol: t().passwordRuleSymbol,
+            };
+            const requirementItems = {};
+            for (const [key, label] of Object.entries(requirementLabels)) {
+              requirementItems[key] = text(passwordRequirements, "li", label);
+            }
+            form.append(passwordRequirements);
+            const personalWarning = text(form, "p", t().passwordPersonalWarning, "field-feedback error");
+            personalWarning.hidden = true;
+
+            const normalizePersonalTerm = (value) => value
+              .normalize("NFKD")
+              .replace(/\p{M}/gu, "")
+              .toLowerCase()
+              .replace(/[^\p{L}\p{N}]/gu, "");
+            checkPassword = () => {
+              const value = passwordInput.value;
+              const criteria = {
+                length: [...value].length >= 10 && [...value].length <= 128,
+                maxBytes: new TextEncoder().encode(value).length <= 72,
+                lowercase: /\p{Ll}/u.test(value),
+                uppercase: /\p{Lu}/u.test(value),
+                number: /\p{Nd}/u.test(value),
+                symbol: /[\p{P}\p{S}]/u.test(value),
+              };
+              for (const [key, item] of Object.entries(requirementItems)) {
+                item.classList.toggle("valid", criteria[key]);
+              }
+              const personalTerms = [
+                usernameInput.value,
+                emailInput.value.split("@", 1)[0],
+              ]
+                .map(normalizePersonalTerm)
+                .filter((term) => term.length > 2);
+              const normalizedPassword = normalizePersonalTerm(value);
+              personalWarning.hidden = !personalTerms.some((term) =>
+                normalizedPassword.includes(term)
+              );
+              return Object.values(criteria).every(Boolean);
+            };
+            passwordInput.addEventListener("input", checkPassword);
+            usernameInput.addEventListener("input", checkPassword);
+            emailInput.addEventListener("input", checkPassword);
+          }
 
           let emailFeedback = null;
           if (mode === "register") {
@@ -598,6 +671,10 @@
           });
           form.addEventListener("submit", async (event) => {
             event.preventDefault();
+            if (!checkPassword()) {
+              errorBox.textContent = t().weakPassword;
+              return;
+            }
             submit.disabled = true;
             errorBox.textContent = "";
             const payload = {
@@ -667,12 +744,14 @@
 
         function updateAccount(user) {
           state.user = user;
-          const preferences = JSON.parse(localStorage.getItem(`game-profile-${user.id}`) || "{}");
-          document.getElementById("account-name").textContent = preferences.displayName || user.username;
-          showAvatar(accountAvatar, preferences.avatarData);
-          profileNameInput.value = preferences.displayName || user.username;
-          showAvatar(profileAvatarPreview, preferences.avatarData);
-          profileAvatarPreview.dataset.imageData = preferences.avatarData || "";
+          const avatarData = user.avatar_data && user.avatar_mime_type
+            ? `data:${user.avatar_mime_type};base64,${user.avatar_data}`
+            : "";
+          document.getElementById("account-name").textContent = user.display_name || user.username;
+          showAvatar(accountAvatar, avatarData);
+          profileNameInput.value = user.display_name || user.username;
+          showAvatar(profileAvatarPreview, avatarData);
+          profileAvatarPreview.dataset.imageData = avatarData;
           const accountEmail = document.getElementById("account-role");
           accountEmail.textContent = user.email;
           accountEmail.title = user.email;
@@ -1593,14 +1672,14 @@
 
         profileOpen.addEventListener("click", () => {
           const user = state.user;
-          const preferences = user
-            ? JSON.parse(localStorage.getItem(`game-profile-${user.id}`) || "{}")
-            : {};
-          profileNameInput.value = preferences.displayName || user?.username || t().accountName;
+          profileNameInput.value = user?.display_name || user?.username || t().accountName;
           profileFileInput.value = "";
           profileFeedback.textContent = "";
-          showAvatar(profileAvatarPreview, preferences.avatarData);
-          profileAvatarPreview.dataset.imageData = preferences.avatarData || "";
+          const avatarData = user?.avatar_data && user?.avatar_mime_type
+            ? `data:${user.avatar_mime_type};base64,${user.avatar_data}`
+            : "";
+          showAvatar(profileAvatarPreview, avatarData);
+          profileAvatarPreview.dataset.imageData = avatarData;
           profileDialog.showModal();
           profileNameInput.focus();
         });
@@ -1608,7 +1687,9 @@
         profileFileInput.addEventListener("change", () => {
           const file = profileFileInput.files[0];
           if (!file) return;
-          if (!file.type.startsWith("image/") || file.size > 2 * 1024 * 1024) {
+          if (!["image/png", "image/jpeg", "image/gif", "image/webp"].includes(file.type)
+            || file.size > 2 * 1024 * 1024
+          ) {
             profileFeedback.textContent = t().profileImageError;
             profileFileInput.value = "";
             return;
@@ -1622,7 +1703,7 @@
           reader.readAsDataURL(file);
         });
 
-        profileForm.addEventListener("submit", (event) => {
+        profileForm.addEventListener("submit", async (event) => {
           event.preventDefault();
           if (!state.user) return;
           const displayName = profileNameInput.value.trim().slice(0, 32);
@@ -1630,15 +1711,26 @@
             profileNameInput.focus();
             return;
           }
-          const oldPreferences = JSON.parse(localStorage.getItem(`game-profile-${state.user.id}`) || "{}");
-          const preferences = {
-            displayName,
-            avatarData: profileAvatarPreview.dataset.imageData || oldPreferences.avatarData || "",
-          };
           try {
-            localStorage.setItem(`game-profile-${state.user.id}`, JSON.stringify(preferences));
-            document.getElementById("account-name").textContent = displayName;
-            showAvatar(accountAvatar, preferences.avatarData);
+            const response = await apiFetch("/api/auth/profile", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                display_name: displayName,
+                date_of_birth: state.user.date_of_birth,
+                phone: state.user.phone,
+                avatar_data: profileAvatarPreview.dataset.imageData || null,
+              }),
+            });
+            const result = await response.json();
+            if (!response.ok) {
+              const detail = result.detail;
+              profileFeedback.textContent = detail && typeof detail === "object" && detail.message
+                ? detail.message
+                : t().profileSaveError;
+              return;
+            }
+            updateAccount(result);
             profileDialog.close();
           } catch (error) {
             profileFeedback.textContent = t().profileSaveError;

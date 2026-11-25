@@ -6,11 +6,13 @@ import re
 import secrets
 import sqlite3
 import time
+import unicodedata
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Iterator
 
 import database
+from password_utils import verify_password as verify_legacy_password
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -66,6 +68,19 @@ def valid_email(email: str) -> bool:
     )
 
 
+def valid_password(password: str) -> bool:
+    categories = [unicodedata.category(character) for character in password]
+    return (
+        len(password) >= 10
+        and len(password) <= 128
+        and len(password.encode("utf-8")) <= 72
+        and any(category == "Ll" for category in categories)
+        and any(category == "Lu" for category in categories)
+        and any(category == "Nd" for category in categories)
+        and any(category.startswith(("P", "S")) for category in categories)
+    )
+
+
 def validate_registration(
     username: str,
     email: str,
@@ -78,7 +93,7 @@ def validate_registration(
         raise ValueError("username")
     if not valid_email(email):
         raise ValueError("email")
-    if len(password) < 12 or len(password) > 128:
+    if not valid_password(password):
         raise ValueError("password")
     if english_level not in {"A1", "A2", "B1", "B2", "C1", "C2"}:
         raise ValueError("english_level")
@@ -102,6 +117,27 @@ def _hash_password(password: str, salt: bytes) -> bytes:
     )
 
 
+def _user_payload(connection: sqlite3.Connection, user: sqlite3.Row) -> dict:
+    profile = connection.execute(
+        "SELECT * FROM user_profiles WHERE user_id = ?", (user["id"],)
+    ).fetchone()
+    return {
+        "id": user["id"],
+        "username": user["username"],
+        "email": user["email"],
+        "english_level": user["english_level"],
+        "display_name": (
+            profile["display_name"]
+            if profile and profile["display_name"]
+            else user["username"]
+        ),
+        "date_of_birth": profile["date_of_birth"] if profile else None,
+        "phone": profile["phone"] if profile else None,
+        "avatar_data": profile["avatar_data"] if profile else None,
+        "avatar_mime_type": profile["avatar_mime_type"] if profile else None,
+    }
+
+
 def create_user(
     username: str,
     email: str,
@@ -115,23 +151,40 @@ def create_user(
     salt = secrets.token_bytes(16)
     password_hash = _hash_password(password, salt).hex()
     with connect() as connection:
+        columns = [
+            "username",
+            "email",
+            "english_level",
+            "password_salt",
+            "password_hash",
+            "hashed_password",
+            "created_at",
+            "last_active_at",
+        ]
+        values = [
+            username,
+            email,
+            english_level,
+            salt.hex(),
+            password_hash,
+            "",
+            now,
+            now,
+        ]
+        existing_columns = {
+            row["name"] for row in connection.execute("PRAGMA table_info(users)")
+        }
+        for column, value in (
+            ("glitters", 0),
+            ("rank_level", "Базовый уровень"),
+        ):
+            if column in existing_columns:
+                columns.append(column)
+                values.append(value)
         cursor = connection.execute(
-            """
-            INSERT INTO users (
-                username, email, english_level, password_salt, password_hash,
-                created_at, last_active_at
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                username,
-                email,
-                english_level,
-                salt.hex(),
-                password_hash,
-                now,
-                now,
-            ),
+            f"INSERT INTO users ({', '.join(columns)}) "
+            f"VALUES ({', '.join('?' for _ in columns)})",
+            values,
         )
         # A legacy database may contain progress for a previously deleted user
         # whose numeric id is reused by SQLite for this new account.
@@ -141,12 +194,14 @@ def create_user(
         connection.execute(
             "INSERT INTO game_progress (user_id) VALUES (?)", (cursor.lastrowid,)
         )
-        return {
-            "id": cursor.lastrowid,
-            "username": username,
-            "email": email,
-            "english_level": english_level,
-        }
+        connection.execute(
+            "INSERT INTO user_profiles (user_id, display_name) VALUES (?, ?)",
+            (cursor.lastrowid, username),
+        )
+        user = connection.execute(
+            "SELECT * FROM users WHERE id = ?", (cursor.lastrowid,)
+        ).fetchone()
+        return _user_payload(connection, user)
 
 
 def authenticate_user(identifier: str, password: str) -> dict | None:
@@ -158,17 +213,40 @@ def authenticate_user(identifier: str, password: str) -> dict | None:
             (normalized_identifier, normalized_identifier),
         ).fetchone()
 
-    salt = bytes.fromhex(user["password_salt"]) if user else bytes(16)
-    expected = bytes.fromhex(user["password_hash"]) if user else bytes(32)
-    actual = _hash_password(password, salt)
-    if not user or not hmac.compare_digest(actual, expected):
-        return None
-    return {
-        "id": user["id"],
-        "username": user["username"],
-        "email": user["email"],
-        "english_level": user["english_level"],
-    }
+        if not user:
+            _hash_password(password, bytes(16))
+            return None
+
+        salt_hex = user["password_salt"] or ""
+        hash_hex = user["password_hash"] or ""
+        verified = False
+        if salt_hex and hash_hex:
+            try:
+                actual = _hash_password(password, bytes.fromhex(salt_hex))
+                verified = hmac.compare_digest(actual, bytes.fromhex(hash_hex))
+            except ValueError:
+                verified = False
+
+        if not verified and user["hashed_password"]:
+            verified = verify_legacy_password(password, user["hashed_password"])
+            if verified:
+                salt = secrets.token_bytes(16)
+                password_hash = _hash_password(password, salt).hex()
+                connection.execute(
+                    """
+                    UPDATE users
+                    SET password_salt = ?, password_hash = ?, hashed_password = ''
+                    WHERE id = ?
+                    """,
+                    (salt.hex(), password_hash, user["id"]),
+                )
+                user = connection.execute(
+                    "SELECT * FROM users WHERE id = ?", (user["id"],)
+                ).fetchone()
+
+        if not verified:
+            return None
+        return _user_payload(connection, user)
 
 
 def is_user_banned(user_id: int) -> bool:
@@ -217,9 +295,13 @@ def get_session(cookie_value: str | None) -> dict | None:
         row = connection.execute(
             """
             SELECT users.id, users.username, users.email, users.english_level,
-                   sessions.csrf_token, sessions.expires_at, sessions.session_hash
+                   user_profiles.display_name, user_profiles.date_of_birth,
+                   user_profiles.phone, user_profiles.avatar_data,
+                   user_profiles.avatar_mime_type, sessions.csrf_token,
+                   sessions.expires_at, sessions.session_hash
             FROM sessions
             JOIN users ON users.id = sessions.user_id
+            LEFT JOIN user_profiles ON user_profiles.user_id = users.id
             WHERE sessions.session_hash = ?
             """,
             (session_hash,),
@@ -242,10 +324,92 @@ def get_session(cookie_value: str | None) -> dict | None:
             "username": row["username"],
             "email": row["email"],
             "english_level": row["english_level"],
+            "display_name": row["display_name"] or row["username"],
+            "date_of_birth": row["date_of_birth"],
+            "phone": row["phone"],
+            "avatar_data": row["avatar_data"],
+            "avatar_mime_type": row["avatar_mime_type"],
         },
         "csrf_token": row["csrf_token"],
         "session_hash": row["session_hash"],
     }
+
+
+def update_profile(
+    user_id: int,
+    display_name: str,
+    date_of_birth: str | None,
+    phone: str | None,
+    avatar_data: str | None,
+    avatar_mime_type: str | None,
+    remove_avatar: bool = False,
+) -> dict:
+    with connect() as connection:
+        profile = connection.execute(
+            "SELECT 1 FROM user_profiles WHERE user_id = ?", (user_id,)
+        ).fetchone()
+        if profile:
+            if remove_avatar:
+                connection.execute(
+                    """
+                    UPDATE user_profiles
+                    SET display_name = ?, date_of_birth = ?, phone = ?,
+                        avatar_data = NULL, avatar_mime_type = NULL
+                    WHERE user_id = ?
+                    """,
+                    (display_name, date_of_birth, phone, user_id),
+                )
+            elif avatar_data is not None:
+                connection.execute(
+                    """
+                    UPDATE user_profiles
+                    SET display_name = ?, date_of_birth = ?, phone = ?,
+                        avatar_data = ?, avatar_mime_type = ?
+                    WHERE user_id = ?
+                    """,
+                    (
+                        display_name,
+                        date_of_birth,
+                        phone,
+                        avatar_data,
+                        avatar_mime_type,
+                        user_id,
+                    ),
+                )
+            else:
+                connection.execute(
+                    """
+                    UPDATE user_profiles
+                    SET display_name = ?, date_of_birth = ?, phone = ?
+                    WHERE user_id = ?
+                    """,
+                    (display_name, date_of_birth, phone, user_id),
+                )
+        else:
+            connection.execute(
+                """
+                INSERT INTO user_profiles (
+                    user_id, display_name, date_of_birth, phone,
+                    avatar_data, avatar_mime_type
+                )
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    user_id,
+                    display_name,
+                    date_of_birth,
+                    phone,
+                    None if remove_avatar else avatar_data,
+                    None if remove_avatar else avatar_mime_type,
+                ),
+            )
+
+        user = connection.execute(
+            "SELECT * FROM users WHERE id = ?", (user_id,)
+        ).fetchone()
+        if not user:
+            raise LookupError("User no longer exists.")
+        return _user_payload(connection, user)
 
 
 def delete_session(session_hash: str) -> None:

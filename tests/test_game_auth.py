@@ -33,17 +33,19 @@ class AuthenticationAndProgressTests(unittest.TestCase):
             json={
                 "username": "CaseSolver",
                 "email": email,
-                "password": "a-long-test-password",
+                "password": "CasePassword42!",
                 "english_level": english_level,
             },
         )
 
     def test_game_page_loads_external_javascript(self):
         page = self.client.get("/")
-        script = self.client.get("/game.js?v=17")
+        script = self.client.get("/game.js?v=19")
+        story = self.client.get("/static/js/story-data.js?v=1")
 
         self.assertEqual(page.status_code, 200)
-        self.assertIn('<script src="/game.js?v=17" defer></script>', page.text)
+        self.assertIn('<script src="/static/js/story-data.js?v=1" defer></script>', page.text)
+        self.assertIn('<script src="/game.js?v=19" defer></script>', page.text)
         self.assertIn('id="open-settings"', page.text)
         self.assertIn('id="settings-dialog"', page.text)
         self.assertEqual(script.status_code, 200)
@@ -54,6 +56,9 @@ class AuthenticationAndProgressTests(unittest.TestCase):
         self.assertIn("payload.english_level", script.text)
         self.assertIn("dialogue-choices", script.text)
         self.assertIn("sceneChoices", script.text)
+        self.assertEqual(story.status_code, 200)
+        self.assertIn("window.lastChimeStories.ru", story.text)
+        self.assertIn("window.lastChimeStories.en", story.text)
 
     def test_crime_vocabulary_is_protected_and_complete(self):
         self.assertEqual(self.client.get("/api/game/vocabulary").status_code, 401)
@@ -153,7 +158,7 @@ class AuthenticationAndProgressTests(unittest.TestCase):
             "/api/auth/login",
             json={
                 "email": "detective@example.com",
-                "password": "a-long-test-password",
+                "password": "CasePassword42!",
             },
         )
         self.assertEqual(response.status_code, 200)
@@ -197,7 +202,7 @@ class AuthenticationAndProgressTests(unittest.TestCase):
                 "SELECT password_hash, password_salt FROM users WHERE email = ?",
                 ("new.player@example.com",),
             ).fetchone()
-        self.assertNotEqual(saved["password_hash"], "a-long-test-password")
+        self.assertNotEqual(saved["password_hash"], "CasePassword42!")
         self.assertNotEqual(saved["password_hash"], saved["password_salt"])
 
     def test_admin_delete_removes_account_data_and_frees_credentials(self):
@@ -255,7 +260,7 @@ class AuthenticationAndProgressTests(unittest.TestCase):
 
         valid_login = self.client.post(
             "/api/auth/login",
-            json={"email": "DETECTIVE@example.com", "password": "a-long-test-password"},
+            json={"email": "DETECTIVE@example.com", "password": "CasePassword42!"},
         )
         self.assertEqual(valid_login.status_code, 200)
         self.assertTrue(self.client.get("/api/game").json()["suspects"])
@@ -263,7 +268,7 @@ class AuthenticationAndProgressTests(unittest.TestCase):
         self.client.post("/api/auth/logout", headers=self.csrf_headers())
         username_login = self.client.post(
             "/api/auth/login",
-            json={"email": "CaseSolver", "password": "a-long-test-password"},
+            json={"email": "CaseSolver", "password": "CasePassword42!"},
         )
         self.assertEqual(username_login.status_code, 200)
 
@@ -338,6 +343,28 @@ class AuthenticationAndProgressTests(unittest.TestCase):
             },
         )
         self.assertEqual(response.status_code, 422)
+
+    def test_registration_password_limit_counts_utf8_bytes(self):
+        accepted = self.client.post(
+            "/api/auth/register",
+            json={
+                "username": "ByteLimit",
+                "email": "byte-limit@example.com",
+                "password": "Aa1!" + "é" * 34,
+            },
+        )
+        self.assertEqual(accepted.status_code, 200)
+
+        rejected = self.client.post(
+            "/api/auth/register",
+            json={
+                "username": "TooManyBytes",
+                "email": "too-many-bytes@example.com",
+                "password": "Aa1!" + "é" * 35,
+            },
+        )
+        self.assertEqual(rejected.status_code, 422)
+        self.assertEqual(rejected.json()["detail"]["code"], "password")
 
 
 if __name__ == "__main__":

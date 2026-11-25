@@ -1,13 +1,18 @@
+import base64
+import binascii
 import hmac
 import os
+import re
 import sqlite3
 import time
 from collections import defaultdict, deque
+from datetime import date
 from pathlib import Path
 from typing import Literal
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 import auth
@@ -17,6 +22,7 @@ from vocabulary import get_vocabulary_exercises, get_vocabulary_games
 
 app = FastAPI(title="The Last Chime")
 BASE_DIR = Path(__file__).resolve().parent
+app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 SESSION_COOKIE = "last_chime_session"
 LOGIN_WINDOW_SECONDS = 15 * 60
 LOGIN_MAX_ATTEMPTS = 5
@@ -26,7 +32,7 @@ login_attempts = defaultdict(deque)
 class RegisterPayload(BaseModel):
     username: str = Field(min_length=3, max_length=32)
     email: str = Field(min_length=3, max_length=254)
-    password: str = Field(min_length=12, max_length=128)
+    password: str = Field(min_length=10, max_length=128)
     english_level: Literal["A1", "A2", "B1", "B2", "C1", "C2"] = "B2"
 
 
@@ -37,6 +43,14 @@ class LoginPayload(BaseModel):
 
 class AnswerPayload(BaseModel):
     answer: str = Field(min_length=1, max_length=100)
+
+
+class ProfilePayload(BaseModel):
+    display_name: str = Field(min_length=1, max_length=32)
+    date_of_birth: str | None = None
+    phone: str | None = Field(default=None, max_length=32)
+    avatar_data: str | None = Field(default=None, max_length=2_800_000)
+    remove_avatar: bool = False
 
 
 def get_current_session(request: Request) -> dict:
@@ -104,6 +118,9 @@ def home():
 
 
 @app.get("/game", include_in_schema=False)
+@app.get("/menu", include_in_schema=False)
+@app.get("/login", include_in_schema=False)
+@app.get("/play", include_in_schema=False)
 def game_page():
     return FileResponse(BASE_DIR / "game.html")
 
@@ -149,7 +166,10 @@ def register(payload: RegisterPayload, response: Response):
         messages = {
             "username": "Use 3–32 English letters, numbers, dots, underscores, or dashes.",
             "email": "Enter a valid email address.",
-            "password": "Password must be between 12 and 128 characters.",
+            "password": (
+                "Use 10-128 characters with a lowercase letter, an uppercase "
+                "letter, a number, and a symbol."
+            ),
             "english_level": "Choose a valid English level.",
         }
         raise HTTPException(
@@ -240,6 +260,110 @@ def logout(
         SESSION_COOKIE, path="/", httponly=True, samesite="lax"
     )
     return {"authenticated": False}
+
+
+@app.post("/api/auth/profile")
+def save_profile(
+    payload: ProfilePayload,
+    request: Request,
+    session: dict = Depends(get_current_session),
+):
+    require_csrf(request, session)
+
+    display_name = payload.display_name.strip()
+    if not display_name or not display_name.isprintable():
+        raise HTTPException(
+            status_code=422,
+            detail={"code": "invalid_profile", "message": "Enter a valid display name."},
+        )
+
+    date_of_birth = None
+    if payload.date_of_birth:
+        try:
+            parsed_date = date.fromisoformat(payload.date_of_birth)
+        except ValueError as error:
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "code": "invalid_profile",
+                    "message": "Enter a valid date of birth.",
+                },
+            ) from error
+        if parsed_date > date.today():
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "code": "invalid_profile",
+                    "message": "Date of birth cannot be in the future.",
+                },
+            )
+        date_of_birth = parsed_date.isoformat()
+
+    phone = (payload.phone or "").strip() or None
+    if phone and not re.fullmatch(r"\+?[0-9\s().-]{7,32}", phone):
+        raise HTTPException(
+            status_code=422,
+            detail={"code": "invalid_profile", "message": "Enter a valid phone number."},
+        )
+
+    avatar_data = None
+    avatar_mime_type = None
+    if payload.avatar_data is not None:
+        header, separator, encoded_image = payload.avatar_data.partition(",")
+        allowed_types = {
+            "data:image/png;base64": (b"\x89PNG\r\n\x1a\n",),
+            "data:image/jpeg;base64": (b"\xff\xd8\xff",),
+            "data:image/gif;base64": (b"GIF87a", b"GIF89a"),
+            "data:image/webp;base64": (b"RIFF",),
+        }
+        signatures = allowed_types.get(header)
+        if not separator or not signatures:
+            raise HTTPException(
+                status_code=422,
+                detail={"code": "invalid_avatar", "message": "Unsupported image format."},
+            )
+        try:
+            image_bytes = base64.b64decode(encoded_image, validate=True)
+        except (binascii.Error, ValueError) as error:
+            raise HTTPException(
+                status_code=422,
+                detail={"code": "invalid_avatar", "message": "Invalid image data."},
+            ) from error
+        is_valid_signature = any(
+            image_bytes.startswith(signature) for signature in signatures
+        )
+        if (
+            not is_valid_signature
+            or len(image_bytes) > 2 * 1024 * 1024
+            or (
+                header == "data:image/webp;base64"
+                and image_bytes[8:12] != b"WEBP"
+            )
+        ):
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "code": "invalid_avatar",
+                    "message": "Choose a valid image no larger than 2 MB.",
+                },
+            )
+        avatar_data = encoded_image
+        avatar_mime_type = header[5:-7]
+
+    try:
+        return auth.update_profile(
+            session["user"]["id"],
+            display_name,
+            date_of_birth,
+            phone,
+            avatar_data,
+            avatar_mime_type,
+            payload.remove_avatar,
+        )
+    except LookupError as error:
+        raise HTTPException(
+            status_code=404, detail="The account no longer exists."
+        ) from error
 
 
 @app.get("/api/game")

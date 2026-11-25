@@ -45,19 +45,6 @@ VOCABULARY_EXERCISES = (
             "jury — lawyer — police officer — prosecutor — prisoner",
         ],
         "answer": "1 suspect, 2 witness, 3 victim, 4 prisoner, 5 lawyer, 6 judge, 7 jury, 8 police officer, 9 prosecutor, 10 criminal",
-        "drag_pairs": [
-            {"id": "1", "prompt": "May have committed a crime", "answer": "suspect"},
-            {"id": "2", "prompt": "Sees a crime happen", "answer": "witness"},
-            {"id": "3", "prompt": "Suffers because of a crime", "answer": "victim"},
-            {"id": "4", "prompt": "Found guilty and serving a sentence", "answer": "prisoner"},
-            {"id": "5", "prompt": "Represents someone in court", "answer": "lawyer"},
-            {"id": "6", "prompt": "Decides the punishment", "answer": "judge"},
-            {"id": "7", "prompt": "Group deciding whether someone is guilty", "answer": "jury"},
-            {"id": "8", "prompt": "Investigates crimes and arrests criminals", "answer": "police officer"},
-            {"id": "9", "prompt": "Accuses someone in court", "answer": "prosecutor"},
-            {"id": "10", "prompt": "Commits a crime", "answer": "criminal"},
-        ],
-        "drag_options": ["criminal", "victim", "witness", "suspect", "judge", "jury", "lawyer", "police officer", "prosecutor", "prisoner"],
     },
     {
         "id": 3,
@@ -67,14 +54,6 @@ VOCABULARY_EXERCISES = (
             "fine, murder, imprisonment, theft, community service, burglary, probation, fraud, prison sentence, vandalism, life imprisonment, arrest",
         ],
         "answer": "Crimes: murder, theft, burglary, fraud, vandalism. Punishments: fine, imprisonment, community service, probation, prison sentence, life imprisonment. Arrest is a legal action, not a punishment. Examples: robbery, kidnapping / a warning, a suspended sentence.",
-        "drag_pairs": [
-            {"id": "1", "prompt": "murder", "answer": "crime"}, {"id": "2", "prompt": "theft", "answer": "crime"},
-            {"id": "3", "prompt": "burglary", "answer": "crime"}, {"id": "4", "prompt": "fraud", "answer": "crime"},
-            {"id": "5", "prompt": "vandalism", "answer": "crime"}, {"id": "6", "prompt": "fine", "answer": "punishment"},
-            {"id": "7", "prompt": "imprisonment", "answer": "punishment"}, {"id": "8", "prompt": "community service", "answer": "punishment"},
-            {"id": "9", "prompt": "probation", "answer": "punishment"}, {"id": "10", "prompt": "life imprisonment", "answer": "punishment"},
-        ],
-        "drag_options": ["crime", "punishment"],
     },
     {
         "id": 4,
@@ -86,13 +65,6 @@ VOCABULARY_EXERCISES = (
             "Bonus: write four sentences using the expressions.",
         ],
         "answer": "1 commit, 2 break, 3 pay, 4 serve, 5 catch, 6 face, 7 go, 8 release.",
-        "drag_pairs": [
-            {"id": "1", "prompt": "__ a crime", "answer": "commit"}, {"id": "2", "prompt": "__ the law", "answer": "break"},
-            {"id": "3", "prompt": "__ a fine", "answer": "pay"}, {"id": "4", "prompt": "__ a prison sentence", "answer": "serve"},
-            {"id": "5", "prompt": "__ a criminal", "answer": "catch"}, {"id": "6", "prompt": "__ charges", "answer": "face"},
-            {"id": "7", "prompt": "__ to court", "answer": "go"}, {"id": "8", "prompt": "__ a prisoner", "answer": "release"},
-        ],
-        "drag_options": ["commit", "break", "pay", "serve", "catch", "face", "go", "release"],
     },
     {
         "id": 5,
@@ -107,15 +79,6 @@ VOCABULARY_EXERCISES = (
             "F. Someone takes a person by force and demands money from their family.",
         ],
         "answer": "A theft, B burglary, C arson, D fraud, E vandalism, F kidnapping.",
-        "drag_pairs": [
-            {"id": "A", "prompt": "Wallet secretly taken on a crowded bus", "answer": "theft"},
-            {"id": "B", "prompt": "Enters a house through a window and steals", "answer": "burglary"},
-            {"id": "C", "prompt": "Deliberately sets fire to a warehouse", "answer": "arson"},
-            {"id": "D", "prompt": "Fake website takes bank details", "answer": "fraud"},
-            {"id": "E", "prompt": "Paints graffiti on a public building", "answer": "vandalism"},
-            {"id": "F", "prompt": "Takes a person and demands money", "answer": "kidnapping"},
-        ],
-        "drag_options": ["theft", "burglary", "arson", "fraud", "vandalism", "kidnapping"],
     },
     {
         "id": 6,
@@ -127,13 +90,6 @@ VOCABULARY_EXERCISES = (
             "Police officer: The __ was __ yesterday. / Journalist: What __ could he receive if he's found __?",
         ],
         "answer": "evidence, witness / innocent, trial / suspect, arrested, sentence, guilty.",
-        "drag_pairs": [
-            {"id": "1", "prompt": "Enough __ to charge him", "answer": "evidence"}, {"id": "2", "prompt": "Someone who saw what happened", "answer": "witness"},
-            {"id": "3", "prompt": "My client is __", "answer": "innocent"}, {"id": "4", "prompt": "The __ will begin next Monday", "answer": "trial"},
-            {"id": "5", "prompt": "The __ was __ yesterday", "answer": "suspect"}, {"id": "6", "prompt": "The suspect was __ yesterday", "answer": "arrested"},
-            {"id": "7", "prompt": "What __ could he receive?", "answer": "sentence"}, {"id": "8", "prompt": "If he's found __", "answer": "guilty"},
-        ],
-        "drag_options": ["evidence", "witness", "innocent", "trial", "suspect", "arrested", "sentence", "guilty"],
     },
     {
         "id": 7,
@@ -147,14 +103,6 @@ VOCABULARY_EXERCISES = (
             "5. knife — weapon — gun — witness",
         ],
         "answer": "1 sandwich (not crime-scene evidence); 2 burglar (a criminal, not a role in an investigation); 3 policeman (the others work in court); 4 supermarket (not connected with prison); 5 witness (a person, not an object or weapon).",
-        "drag_pairs": [
-            {"id": "1", "prompt": "fingerprint · footprint · evidence · __", "answer": "sandwich"},
-            {"id": "2", "prompt": "detective · suspect · witness · __", "answer": "burglar"},
-            {"id": "3", "prompt": "judge · jury · lawyer · __", "answer": "policeman"},
-            {"id": "4", "prompt": "prison · cell · sentence · __", "answer": "supermarket"},
-            {"id": "5", "prompt": "knife · weapon · gun · __", "answer": "witness"},
-        ],
-        "drag_options": ["sandwich", "burglar", "policeman", "supermarket", "witness"],
     },
     {
         "id": 8,
@@ -171,13 +119,6 @@ VOCABULARY_EXERCISES = (
             "8. The police found important __ at the crime scene. (evident)",
         ],
         "answer": "1 suspect, 2 guilty, 3 sentence, 4 crime, 5 burgling, 6 release, 7 description, 8 evidence.",
-        "drag_pairs": [
-            {"id": "1", "prompt": "The police arrested the __", "answer": "suspect"}, {"id": "2", "prompt": "The court found him __", "answer": "guilty"},
-            {"id": "3", "prompt": "A five-year prison __", "answer": "sentence"}, {"id": "4", "prompt": "Investigating the __", "answer": "crime"},
-            {"id": "5", "prompt": "Accused of __ several houses", "answer": "burgling"}, {"id": "6", "prompt": "Ordered his immediate __", "answer": "release"},
-            {"id": "7", "prompt": "Gave a detailed __", "answer": "description"}, {"id": "8", "prompt": "Found important __", "answer": "evidence"},
-        ],
-        "drag_options": ["suspect", "guilty", "sentence", "crime", "burgling", "release", "description", "evidence"],
     },
     {
         "id": 9,
@@ -192,14 +133,6 @@ VOCABULARY_EXERCISES = (
             "Useful language: I think the punishment should be… / In my opinion, they should… / They deserve… / I don't think imprisonment is necessary because… / A more appropriate punishment would be…",
         ],
         "answer": "Open discussion: justify a proportionate punishment for each case.",
-        "drag_pairs": [
-            {"id": "1", "prompt": "Teenager steals a phone", "answer": "community service"},
-            {"id": "2", "prompt": "Repeatedly shoplifts expensive clothes", "answer": "fine"},
-            {"id": "3", "prompt": "Dangerous driving causes an accident", "answer": "driving ban"},
-            {"id": "4", "prompt": "Hacks a company and steals money", "answer": "prison sentence"},
-            {"id": "5", "prompt": "Deliberately destroys public property", "answer": "probation"},
-        ],
-        "drag_options": ["community service", "fine", "driving ban", "prison sentence", "probation"],
     },
     {
         "id": 10,
@@ -210,15 +143,6 @@ VOCABULARY_EXERCISES = (
             "1. What crime has been committed?  2. Who are the possible suspects?  3. Who could be a witness?  4. What evidence would the police look for?  5. Who do you think is guilty?  6. What punishment should they receive?",
         ],
         "answer": "Possible answer: theft; the owner, cleaner and security guard are possible suspects; anyone who saw activity at the gallery could be a witness; police could look for fingerprints, footprints, camera footage, alarm logs and insurance records. The final suspect and punishment should be justified with evidence.",
-        "drag_pairs": [
-            {"id": "1", "prompt": "What crime was committed?", "answer": "theft"},
-            {"id": "2", "prompt": "Who are the possible suspects?", "answer": "owner, cleaner, security guard"},
-            {"id": "3", "prompt": "Who could be a witness?", "answer": "a gallery visitor"},
-            {"id": "4", "prompt": "What evidence should police look for?", "answer": "fingerprints, footage and alarm logs"},
-            {"id": "5", "prompt": "Who is the most likely suspect?", "answer": "security guard"},
-            {"id": "6", "prompt": "What punishment could they receive?", "answer": "prison sentence"},
-        ],
-        "drag_options": ["theft", "owner, cleaner, security guard", "a gallery visitor", "fingerprints, footage and alarm logs", "security guard", "prison sentence"],
     },
 )
 
