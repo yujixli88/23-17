@@ -84,6 +84,11 @@ textarea,
   color: #dc6875;
 }
 
+.game-logo:hover,
+.game-logo:focus-visible {
+  color: #ff8c98;
+}
+
 .game-body {
   background:
     radial-gradient(ellipse at 72% 0%, rgba(90, 27, 40, 0.13), transparent 42%),
@@ -292,6 +297,12 @@ textarea:focus-visible {
   background:
     radial-gradient(circle at 90% 15%, rgba(158, 41, 58, 0.2), transparent 34%),
     linear-gradient(145deg, #2b2025, #151316);
+}
+
+.vocab-game-card:hover,
+.matching-answer:hover:not(:disabled),
+.vocab-answer-card:hover:not(:disabled) {
+  border-color: #c64b5b;
 }
 
 .vocab-answer-card:hover:not(:disabled),
