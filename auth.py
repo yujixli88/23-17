@@ -73,6 +73,7 @@ def valid_password(password: str) -> bool:
     return (
         len(password) >= 10
         and len(password) <= 128
+        and len(password.encode("utf-8")) <= 72
         and any(category == "Ll" for category in categories)
         and any(category == "Lu" for category in categories)
         and any(category == "Nd" for category in categories)

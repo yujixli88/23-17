@@ -39,6 +39,7 @@ class AuthDatabaseTests(unittest.TestCase):
             )[0],
             "detective_17",
         )
+        self.assertTrue(auth.valid_password("Aa1!" + "é" * 34))
 
         rejected = (
             "Aa1!short",
@@ -46,6 +47,8 @@ class AuthDatabaseTests(unittest.TestCase):
             "abcdefghij1!",
             "Abcdefghij!",
             "Abcdefghij1",
+            "Aa1!" + "é" * 35,
+            "A1!" + "a" * 70,
         )
         for password in rejected:
             with self.subTest(password=password):
